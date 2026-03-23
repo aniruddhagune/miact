@@ -1,44 +1,69 @@
-def parse_query(query: str) -> dict:
+# Currently works for simple, comma separated, and "vs" queries.
+
+import re
+
+ATTRIBUTE_KEYWORDS = {
+    "battery": ["battery", "mah"],
+    "price": ["price", "cost"],
+    "camera": ["camera", "mp"],
+    "display": ["display", "screen"],
+    "size": ["size", "length", "width", "height"],
+    "power": ["watt", "watts"]
+}
+
+NEWS_KEYWORDS = [
+    "news", "latest", "update", "war", "election",
+    "launch", "announcement", "report"
+]
+
+
+def parse_query(query: str):
     query = query.lower().strip()
 
-    # ---- CASE 1: Comparison ----
-    if " vs " in query:
-        parts = query.split(" vs ")
+    # ---- Detect News ----
+    if any(word in query for word in NEWS_KEYWORDS):
         return {
-            "type": "comparison",
-            "entities": [p.strip() for p in parts],
+            "mode": "news",
+            "entities": [query],
             "attribute": None
         }
 
-    # ---- CASE 2: Attribute Query ----
-    keywords = ["what is", "what are", "tell me", "give me"]
-    if any(query.startswith(k) for k in keywords):
-        
-        # naive attribute extraction
-        if "battery" in query:
-            attribute = "battery"
-        elif "price" in query:
-            attribute = "price"
-        elif "camera" in query:
-            attribute = "camera"
-        else:
-            attribute = "general"
-
-        # naive entity extraction
-        # assume "of X"
-        if " of " in query:
-            entity = query.split(" of ")[-1].strip()
-        else:
-            entity = query
+    # ---- Detect Comparison ----
+    if " vs " in query or "," in query:
+        parts = re.split(r",| vs ", query)
+        entities = [p.strip() for p in parts if p.strip()]
 
         return {
+            "mode": "product",
+            "type": "comparison",
+            "entities": entities,
+            "attribute": None
+        }
+
+    # ---- Detect Attribute ----
+    attribute = None
+    for attr, keywords in ATTRIBUTE_KEYWORDS.items():
+        if any(word in query for word in keywords):
+            attribute = attr
+            break
+
+    if attribute:
+        entity = query
+        for word in ATTRIBUTE_KEYWORDS[attribute]:
+            entity = entity.replace(word, "")
+
+        entity = entity.strip()
+
+        return {
+            "mode": "product",
             "type": "attribute",
             "entities": [entity],
             "attribute": attribute
         }
 
-    # ---- CASE 3: Default ----
+    # ---- Default: Direct Entity ----
     return {
+        "mode": "product",
         "type": "simple",
         "entities": [query],
         "attribute": None
