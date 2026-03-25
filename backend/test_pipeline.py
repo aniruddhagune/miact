@@ -7,6 +7,7 @@ from services.comparison_detector import detect_comparison
 from services.value_extractor import extract_values
 
 from database.attribute_repository import insert_attribute
+from services.date_extractor import extract_dates
 
 
 # ---- INPUT ----
@@ -30,6 +31,8 @@ for s in sentences:
     sentiment = classify_sentence(s)
     comparison = detect_comparison(s)
     values = extract_values(s, aspects)
+    dates = extract_dates(s)
+
 
     # ---- PRINT ----
     print("\nSentence:", s)
@@ -37,6 +40,7 @@ for s in sentences:
     print("Sentiment:", sentiment)
     print("Comparison:", comparison)
     print("Values:", values)
+    print("Dates:", dates)
 
     # ---- STORE ONLY OBJECTIVE DATA ----
     if sentiment == "objective":
@@ -45,5 +49,6 @@ for s in sentences:
                 entity=entity,
                 aspect=v["aspect"],
                 value=v["value"],
-                unit=v["unit"]
+                unit=v["unit"],
+                source = data.get("source", "unknown")
             )

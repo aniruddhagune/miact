@@ -18,7 +18,8 @@ def extract_content(url: str):
         return {
             "title": article.title,
             "text": text,
-            "method": "newspaper"
+            "method": "newspaper",
+            "source": url
         }
 
     except Exception:
