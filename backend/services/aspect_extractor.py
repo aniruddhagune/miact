@@ -10,18 +10,19 @@ def extract_aspects(sentence: str, domain: str = "generic"):
         from domains.phone_aspects import (
             ASPECT_KEYWORDS,
             ASPECT_MAPPING,
-            NON_ASPECT_TERMS
+            NON_ASPECT_TERMS,
+            VALID_ASPECT_NOUNS
         )
     else:
         ASPECT_KEYWORDS = {}
         ASPECT_MAPPING = {}
         NON_ASPECT_TERMS = []
+        VALID_ASPECT_NOUNS = []
 
-    # ---- ALWAYS initialize these ----
     sentence_lower = sentence.lower()
     found_aspects = set()
 
-    # ---- keyword detection ----
+    # ---- keyword detection (strong signal) ----
     for aspect, keywords in ASPECT_KEYWORDS.items():
         for word in keywords:
             if re.search(rf"\b{word}\b", sentence_lower):
@@ -30,23 +31,27 @@ def extract_aspects(sentence: str, domain: str = "generic"):
     if found_aspects:
         return list(found_aspects)
 
-    # ---- fallback ----
+    # ---- fallback using dependency + validation ----
     doc = nlp(sentence)
 
     for token in doc:
         if token.pos_ == "NOUN":
             if token.dep_ in ["dobj", "nsubj", "pobj", "attr"]:
-                text = token.text.lower()
+                word = token.text.lower()
 
-                # ignore numbers/specs
-                if any(char.isdigit() for char in text):
+                # skip numbers/spec noise
+                if any(char.isdigit() for char in word):
                     continue
 
-                # ignore domain-specific non-aspects
-                if any(term in text for term in NON_ASPECT_TERMS):
+                # skip known non-aspects
+                if any(term in word for term in NON_ASPECT_TERMS):
                     continue
 
-                found_aspects.add(text)
+                # skip if not a valid aspect-type noun
+                if VALID_ASPECT_NOUNS and word not in VALID_ASPECT_NOUNS:
+                    continue
+
+                found_aspects.add(word)
 
     # ---- normalization ----
     final_aspects = set()
