@@ -1,39 +1,45 @@
+import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+nlp = spacy.load("en_core_web_sm")
 analyzer = SentimentIntensityAnalyzer()
+
+# opinion-heavy adjectives
+OPINION_WORDS = [
+    "good", "bad", "excellent", "poor", "amazing",
+    "terrible", "great", "awful", "best", "worst",
+    "impressive", "disappointing"
+]
 
 
 def classify_sentence(sentence: str):
-    score = analyzer.polarity_scores(sentence)
-    compound = score["compound"]
+    doc = nlp(sentence)
 
-    # detect factual patterns
-    factual_indicators = ["has", "is", "was", "were", "measured", "contains"]
+    sentiment = analyzer.polarity_scores(sentence)
+    compound = sentiment["compound"]
 
-    is_factual = any(word in sentence.lower() for word in factual_indicators)
+    # check for opinion words explicitly
+    has_opinion_word = any(word in sentence.lower() for word in OPINION_WORDS)
 
-    if is_factual and -0.3 < compound < 0.3:
+    # detect factual verbs
+    factual_verbs = ["has", "is", "was", "were", "contains", "includes"]
+    has_factual_verb = any(token.lemma_ in factual_verbs for token in doc)
+
+    # ---- logic ----
+    if has_opinion_word:
+        if compound >= 0:
+            return "subjective_positive"
+        else:
+            return "subjective_negative"
+
+    # neutral factual statements
+    if has_factual_verb and -0.3 < compound < 0.3:
         return "objective"
 
-    if compound >= 0.3:
+    # fallback to sentiment
+    if compound >= 0.4:
         return "subjective_positive"
-    elif compound <= -0.3:
+    elif compound <= -0.4:
         return "subjective_negative"
-    else:
-        return "objective"
 
-
-# def classify_sentence(sentence: str):
-#     subjective_keywords = [
-#         "best", "worst", "good", "bad",
-#         "amazing", "excellent", "poor",
-#         "love", "hate", "better"
-#     ]
-
-#     if any(word in sentence.lower() for word in subjective_keywords):
-#         return {
-#             "label": 'subjective',
-#             "confidence": 0.5
-#             }
-
-#     return "objective"
+    return "objective"

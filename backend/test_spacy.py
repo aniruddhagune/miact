@@ -1,10 +1,26 @@
-import spacy
+from services.preprocessing import clean_text, split_into_sentences
+from services.content_extractor import extract_content
+from services.aspect_extractor import extract_aspects
+from services.classifier import classify_sentence
+from services.domain_detector import detect_domain
 
-nlp = spacy.load("en_core_web_sm")
+data = extract_content("https://en.wikipedia.org/wiki/OnePlus_9")
 
-text = "The iPhone 15 has a 3349 mAh battery and offers excellent performance."
+cleaned = clean_text(data["text"])
+sentences = split_into_sentences(cleaned)
 
-doc = nlp(text)
+for s in sentences[:20]:
+    aspects = extract_aspects(s)
+    label = classify_sentence(s)
 
-for token in doc:
-    print(token.text, token.pos_, token.dep_)
+    print("\nSentence:", s)
+    print("Aspects:", aspects)
+    print("Label:", label)
+
+query = "oneplus 9 vs oneplus 9 pro"
+
+domain = detect_domain(query)
+
+
+aspects = extract_aspects(s, domain=domain)
+
