@@ -1,18 +1,18 @@
-def detect_domain(query: str):
-    query_lower = query.lower()
+from domains.domain_signals import DOMAIN_SIGNALS
 
-    phone_keywords = [
-        "iphone",
-        "samsung",
-        "oneplus",
-        "xiaomi",
-        "huawei",
-        "phone",
-        
-        "battery", "camera", "display"
-    ]
 
-    if any(word in query_lower for word in phone_keywords):
-        return "phone"
+def detect_domain(text: str):
+    text = text.lower()
 
-    return "generic"
+    scores = {}
+
+    for domain, signals in DOMAIN_SIGNALS.items():
+        scores[domain] = sum(1 for s in signals if s in text)
+
+    # get best match
+    best_domain = max(scores, key=scores.get)
+
+    if scores[best_domain] == 0:
+        return "generic"
+
+    return best_domain

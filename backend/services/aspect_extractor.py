@@ -6,8 +6,8 @@ nlp = spacy.load("en_core_web_sm")
 
 def extract_aspects(sentence: str, domain: str = "generic"):
     # ---- load domain-specific config ----
-    if domain == "phone":
-        from domains.phone_aspects import (
+    if domain == "tech":
+        from domains.tech import (
             ASPECT_KEYWORDS,
             ASPECT_MAPPING,
             NON_ASPECT_TERMS,
