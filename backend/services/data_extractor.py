@@ -8,7 +8,9 @@ from services.aspect_extractor import extract_aspects
 from domains.tech import (
     TECH_NUMERIC_PATTERNS,
     TECH_NAMED_PATTERNS,
-    TECH_DATE_KEYWORDS
+    TECH_DATE_KEYWORDS,
+    NAMED_ENTITY_MAPPING,
+    UNIT_ASPECT_MAPPING
 )
 
 from domains.news import (
@@ -30,19 +32,21 @@ def extract_numeric(sentence, aspects):
 
         for match in matches:
             value = float(match.group(1))
-            unit = match.group(3)
+            unit = match.group(2)
 
-            start = match.start()
-            window = sentence_lower[max(0, start - 40): start + 40]
+            # normalize unit (important)
+            unit = unit.lower()
 
-            for aspect in aspects:
-                if aspect in window:
-                    results.append({
-                        "aspect": aspect,
-                        "value": value,
-                        "unit": unit,
-                        "type": "numeric"
-                    })
+            aspect = UNIT_ASPECT_MAPPING.get(unit)
+            if not aspect:
+                continue
+
+            results.append({
+                "aspect": aspect,
+                "value": value,
+                "unit": unit,
+                "type": "numeric"
+            })
 
     return results
 
@@ -113,9 +117,17 @@ def extract_named_values(sentence, aspects):
             if isinstance(match, tuple):
                 match = match[0]
 
-            aspect = "processor"
-            if aspects:
-                aspect = aspects[0]
+            match_lower = match.lower()
+
+            aspect = None
+
+            for key, keywords in NAMED_ENTITY_MAPPING.items():
+                if any(k in match_lower for k in keywords):
+                    aspect = key
+                    break
+
+            if not aspect:
+                aspect = aspects[0] if aspects else "unknown"
 
             results.append({
                 "aspect": aspect,

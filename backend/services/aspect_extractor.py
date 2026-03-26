@@ -10,19 +10,17 @@ def extract_aspects(sentence: str, domain: str = "generic"):
         from domains.tech import (
             ASPECT_KEYWORDS,
             ASPECT_MAPPING,
-            NON_ASPECT_TERMS,
-            VALID_ASPECT_NOUNS
+            NON_ASPECT_TERMS
         )
     else:
         ASPECT_KEYWORDS = {}
         ASPECT_MAPPING = {}
         NON_ASPECT_TERMS = []
-        VALID_ASPECT_NOUNS = []
 
     sentence_lower = sentence.lower()
     found_aspects = set()
 
-    # ---- keyword detection (strong signal) ----
+    # ---- keyword detection (primary signal) ----
     for aspect, keywords in ASPECT_KEYWORDS.items():
         for word in keywords:
             if re.search(rf"\b{word}\b", sentence_lower):
@@ -31,7 +29,7 @@ def extract_aspects(sentence: str, domain: str = "generic"):
     if found_aspects:
         return list(found_aspects)
 
-    # ---- fallback using dependency + validation ----
+    # ---- fallback (LIGHTWEIGHT) ----
     doc = nlp(sentence)
 
     for token in doc:
@@ -43,12 +41,16 @@ def extract_aspects(sentence: str, domain: str = "generic"):
                 if any(char.isdigit() for char in word):
                     continue
 
-                # skip known non-aspects
-                if any(term in word for term in NON_ASPECT_TERMS):
+                # skip generic noise
+                if word in NON_ASPECT_TERMS:
                     continue
 
-                # skip if not a valid aspect-type noun
-                if VALID_ASPECT_NOUNS and word not in VALID_ASPECT_NOUNS:
+                # 🔥 NEW: avoid ultra-generic nouns
+                if len(word) <= 2:
+                    continue
+
+                # 🔥 NEW: ignore vague nouns
+                if word in ["thing", "part", "feature", "system"]:
                     continue
 
                 found_aspects.add(word)

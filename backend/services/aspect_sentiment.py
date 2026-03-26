@@ -1,5 +1,5 @@
 from services.aspect_extractor import extract_aspects
-from services.classifier import classify_sentence
+from backend.services.objectivity_classifier import classify_sentence
 
 import re
 
