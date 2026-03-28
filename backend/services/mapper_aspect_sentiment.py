@@ -1,7 +1,7 @@
-from services.aspect_extractor import extract_aspects
+import re
+from backend.services.extractor_aspect import extract_aspects
 from services.objectivity_classifier import classify_sentence
 
-import re
 
 def split_sentence(sentence: str):
     parts = re.split(
@@ -19,7 +19,14 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
 
     for part in parts:
         aspects = extract_aspects(part, domain)
-        sentiment = classify_sentence(part)
+        raw_sentiment = classify_sentence(part)
+
+        if "positive" in raw_sentiment:
+            sentiment = "positive"
+        elif "negative" in raw_sentiment:
+            sentiment = "negative"
+        else:
+            sentiment = "neutral"
 
         unique_aspects = set(aspects)
 

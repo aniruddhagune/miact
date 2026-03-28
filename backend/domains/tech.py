@@ -1,3 +1,9 @@
+# Trusted Sources
+TRUSTED_SOURCES = [
+    "https://en.wikipedia.org/wiki/{}",
+    "https://www.gsmarena.com/{}.php",
+]
+
 # Aspect Detection
 ASPECT_KEYWORDS = {
     "battery": ["battery", "battery life",],

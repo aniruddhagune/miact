@@ -3,7 +3,7 @@
 import re
 import spacy
 
-from services.aspect_extractor import extract_aspects
+from services.extractor_aspect import extract_aspects
 
 from domains.tech import (
     TECH_NUMERIC_PATTERNS,

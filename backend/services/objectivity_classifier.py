@@ -1,26 +1,24 @@
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from services.analyzer_sentiment import NEGATIVE_WORDS, OPINION_WORDS
 
 nlp = spacy.load("en_core_web_sm")
 analyzer = SentimentIntensityAnalyzer()
 
-# opinion-heavy adjectives
-OPINION_WORDS = [
-    "good", "bad", "excellent", "poor", "amazing",
-    "terrible", "great", "awful", "best", "worst",
-    "impressive", "disappointing"
-]
 
-NEGATIVE_CONTEXT = [
-    "controversy", "controversial", "throttle", "throttling", "limit", "limited",
-    "slower", "worse", "drop", "issue", "problem", "overheating", "manipulation"
-]
+
+
+
+
+
+
+
 
 def classify_sentence(sentence: str):
     sentence_lower = sentence.lower()
 
     # ---- negative override ----
-    if any(word in sentence_lower for word in NEGATIVE_CONTEXT):
+    if any(word in sentence_lower for word in NEGATIVE_WORDS):
         return "subjective_negative"
 
     doc = nlp(sentence)
