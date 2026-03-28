@@ -1,5 +1,6 @@
 from services.preprocessing import *
 from services.objectivity_classifier import classify_sentence
+from services.aspect_sentiment import analyze_aspect_sentiment
 
 from services.content_extractor import extract_content
 from services.domain_detector import detect_domain
@@ -25,13 +26,38 @@ alias_map = build_subject_aliases(subjects)
 url = "https://en.wikipedia.org/wiki/OnePlus_9"
 data = extract_content(url)
 
+# ---- SUBJECTIVE TEST ----
+test_text = """
+The battery life is excellent but the camera is disappointing.
+Performance is smooth and fast.
+The display is good, however brightness could be better.
+The camera and display are okay.
+"""
+
 # ---- PREPROCESS ----
-cleaned = clean_text(data["text"])
+# cleaned = clean_text(data["text"])
+cleaned = clean_text(test_text)
 sentences = split_into_sentences(cleaned)
 seen_global = set()
 
 # ---- PIPELINE ----
 for s in sentences:
+
+    label = classify_sentence(s)
+    # print("SENTENCE:", s)
+    # print("LABEL:", label)
+    # print("------")
+
+    # ---- SUBJECTIVE ----
+    if "subjective" in label:
+        opinions = analyze_aspect_sentiment(s, domain)
+
+        for op in opinions:
+            print("SUBJECTIVE:", op)
+
+        continue
+
+    # ---- OBJECTIVE ----
     parts = split_comparison(s)
     sentence_subjects = detect_subjects(s, alias_map)
 

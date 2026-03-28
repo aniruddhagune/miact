@@ -1,5 +1,5 @@
 from services.aspect_extractor import extract_aspects
-from backend.services.objectivity_classifier import classify_sentence
+from services.objectivity_classifier import classify_sentence
 
 import re
 
@@ -23,11 +23,11 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
 
         unique_aspects = set(aspects)
 
-    for aspect in unique_aspects:
-        results.append({
-            "aspect": aspect,
-            "sentiment": sentiment,
-            "text": part
-        })
+        for aspect in unique_aspects:
+            results.append({
+                "aspect": aspect,
+                "sentiment": sentiment,
+                "text": part
+            })
 
     return results

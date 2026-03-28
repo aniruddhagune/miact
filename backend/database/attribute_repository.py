@@ -41,6 +41,8 @@ def insert_attribute(
         )
     )
 
+
+
     conn.commit()
     cur.close()
     conn.close()
