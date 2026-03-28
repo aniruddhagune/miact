@@ -1,7 +1,7 @@
 # Currently works for simple, comma separated, and "vs" queries.
 
 import re
-from services.domain_detector import detect_domain
+from backend.services.domain_detector import detect_domain
 
 ATTRIBUTE_KEYWORDS = {
     "battery": ["battery", "mah"],
