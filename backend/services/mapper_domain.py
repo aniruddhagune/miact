@@ -1,4 +1,4 @@
-from domains.domain_signals import DOMAIN_SIGNALS
+from backend.domains.domain_signals import DOMAIN_SIGNALS
 
 
 def detect_domain(text: str):
