@@ -1,7 +1,27 @@
 # Trusted Sources
-TRUSTED_SOURCES = [
-    "https://en.wikipedia.org/wiki/{}",
-    "https://www.gsmarena.com/{}.php",
+TRUSTED_DOMAINS = [
+    # Generic
+    "wikipedia.org",
+    # Phones
+    "gsmarena.com",
+    "devicespecifications.com",
+    # Laptops
+    
+    # Phone Company Sites
+    "oneplus.in",
+    "apple.com",
+    "samsuing.com",
+    "mi.com",
+    "realme.com/in/",
+    "vivo.com",
+    "oppo.com",
+    "motorola.in"
+
+]
+
+SHOPPING_DOMAINS = [
+    "amazon.in",
+    "flipkart.com"
 ]
 
 # Aspect Detection
@@ -36,7 +56,7 @@ ASPECT_MAPPING = {
 NON_ASPECT_TERMS = [
     "smartphone", "phone", "mobile", "device",
     "max", "pro", "series",
-    "model", "version", "edition"
+    "model", "version", "edition", "specs", "specifications"
 ]
 
 # Numeric Extraction

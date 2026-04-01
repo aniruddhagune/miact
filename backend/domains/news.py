@@ -1,4 +1,17 @@
 # Categories
+TRUSTED_DOMAINS = [
+    # See if can be scrapped reliably.
+    "https://www.hindustantimes.com/",
+    "https://www.ndtv.com/",
+    "https://timesofindia.indiatimes.com/",
+    "https://www.indiatoday.in/",
+    "https://indianexpress.com/",
+]
+
+NEWS_KEYWORDS = [
+    "news", "latest", "update", "war", "election",
+    "launch", "announcement", "report"
+]
 
 NEWS_CATEGORIES = {
     "casualties": [

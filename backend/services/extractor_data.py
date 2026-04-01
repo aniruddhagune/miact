@@ -138,6 +138,40 @@ def extract_named_values(sentence, aspects):
 
     return results
 
+
+# ---- Tables ----
+
+import pandas as pd
+
+
+def extract_tables(url: str):
+    try:
+        tables = pd.read_html(url)
+
+        results = []
+
+        for table in tables:
+            for _, row in table.iterrows():
+                if len(row) < 2:
+                    continue
+
+                key = str(row.iloc[0]).strip().lower()
+                value = str(row.iloc[1]).strip()
+
+                if key and value:
+                    results.append({
+                        "aspect": key,
+                        "value": value,
+                        "type": "table"
+                    })
+
+        return results
+
+    except Exception:
+        return []
+
+
+
 # ---- Function ----
 
 def extract_attributes(sentence, domain="generic"):

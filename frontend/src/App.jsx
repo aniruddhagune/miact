@@ -7,6 +7,7 @@ function App() {
   const [activeChat, setActiveChat] = useState(0);
   const [queries, setQueries] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const containerRef = useRef(null);
 
@@ -14,11 +15,15 @@ function App() {
     if (!input.trim()) return;
 
     const queryText = input;
-
+    setLoading(true);
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/parse?query=${encodeURIComponent(queryText)}`
-      );
+      const res = await fetch("http://127.0.0.1:8000/parse", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: queryText }),
+      });
 
       const data = await res.json();
 
@@ -34,6 +39,8 @@ function App() {
         parsed: { error: "Backend error" },
       };
 
+      setLoading(false);
+      
       setQueries(prev => [...prev, newQuery]);
     }
 
