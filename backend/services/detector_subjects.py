@@ -3,18 +3,32 @@ import re
 # ---- Extract subjects  ----
 
 def extract_subjects(query: str):
+    from backend.domains.tech import ASPECT_KEYWORDS
+
     query = query.lower()
 
-    parts = re.split(r"\bvs\b|,", query)
+    parts = re.split(r"\bvs\band\b|,", query)
 
     subjects = []
+
+    # flatten all aspect keywords
+    aspect_words = set()
+    for words in ASPECT_KEYWORDS.values():
+        for w in words:
+            aspect_words.add(w)
 
     for p in parts:
         p = p.strip()
         p = re.sub(r"\s+", " ", p)
 
-        if p:
-            subjects.append(p)
+        # ---- remove aspect words ----
+        words = p.split()
+        cleaned_words = [w for w in words if w not in aspect_words]
+
+        cleaned = " ".join(cleaned_words).strip()
+
+        if cleaned:
+            subjects.append(cleaned)
 
     return subjects
 

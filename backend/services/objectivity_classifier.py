@@ -8,12 +8,6 @@ analyzer = SentimentIntensityAnalyzer()
 
 
 
-
-
-
-
-
-
 def classify_sentence(sentence: str):
     sentence_lower = sentence.lower()
 

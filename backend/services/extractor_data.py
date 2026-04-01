@@ -1,23 +1,20 @@
 # ---- Imports ---- 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/120.0.0.0 Safari/537.36"
+}
 
 import re
 import spacy
+from bs4 import BeautifulSoup
+import requests
 
-from services.extractor_aspect import extract_aspects
+from backend.services.extractor_aspect import extract_aspects
 
-from domains.tech import (
-    TECH_NUMERIC_PATTERNS,
-    TECH_NAMED_PATTERNS,
-    TECH_DATE_KEYWORDS,
-    NAMED_ENTITY_MAPPING,
-    UNIT_ASPECT_MAPPING
-)
 
-from domains.news import (
-    NEWS_CATEGORIES,
-    NEWS_NUMERIC_KEYWORDS,
-    NEWS_DATE_KEYWORDS
-)
+from backend.domains.tech import *
+from backend.domains.news import *
 
 nlp = spacy.load("en_core_web_sm")
  
@@ -31,14 +28,60 @@ def extract_numeric(sentence, aspects):
         matches = re.finditer(pattern, sentence_lower)
 
         for match in matches:
-            value = float(match.group(1))
-            unit = match.group(2)
-
-            # normalize unit (important)
-            unit = unit.lower()
+            raw = match.group(1)
+            raw = raw.replace(",", "")   # normalize commas
+            value = float(raw)
+            unit = match.group(2).lower()
 
             aspect = UNIT_ASPECT_MAPPING.get(unit)
             if not aspect:
+                continue
+
+            # ---- CONTEXT VALIDATION ----
+            context_window = sentence_lower[max(0, match.start()-40):match.end()+40]
+
+            # require aspect keyword in context
+            from backend.domains.tech import ASPECT_KEYWORDS
+
+            valid = False
+            for key, words in ASPECT_KEYWORDS.items():
+                if key == aspect:
+                    if any(w in context_window for w in words):
+                        valid = True
+                        break
+
+            if not valid:
+                continue
+
+            # ---- CONTEXT WINDOW ----
+            start = match.start()
+            end = match.end()
+            context_window = sentence_lower[max(0, start-40):end+40]
+
+            score = 0
+
+            # ---- POSITIVE SIGNALS ----
+            POSITIVE_KEYWORDS = [
+                "battery", "capacity", "spec", "specs",
+                "features", "comes with", "equipped with"
+            ]
+
+            for k in POSITIVE_KEYWORDS:
+                if k in context_window:
+                    score += 1
+
+            # ---- NEGATIVE SIGNALS ----
+            NEGATIVE_KEYWORDS = [
+                "cell", "cells", "per", "each",
+                "module", "teardown", "replacement"
+            ]
+
+            for k in NEGATIVE_KEYWORDS:
+                if k in context_window:
+                    score -= 2
+
+            # ---- DECISION ----
+            if score < 0:
                 continue
 
             results.append({
@@ -146,17 +189,37 @@ import pandas as pd
 
 def extract_tables(url: str):
     try:
-        tables = pd.read_html(url)
+        response = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
 
         results = []
 
+        # ---- TARGET INFOBOX TABLE ----
+        tables = soup.find_all("table", {"class": "infobox"})
+
         for table in tables:
-            for _, row in table.iterrows():
-                if len(row) < 2:
+            rows = table.find_all("tr")
+
+            for row in rows:
+                header = row.find("th")
+                data = row.find("td")
+
+                if not header or not data:
                     continue
 
-                key = str(row.iloc[0]).strip().lower()
-                value = str(row.iloc[1]).strip()
+                key = header.get_text(strip=True).lower()
+                value = data.get_text(" ", strip=True)
+
+                # ---- NORMALIZE UNICODE ----
+                value = (
+                    value
+                    .replace("\xa0", " ")
+                    .replace("·", " ")
+                    .replace("╖", " ")
+                    .replace("–", "-")
+                    .replace("û", "-")
+                    .lower()   # 👈 ADD THIS
+                )
 
                 if key and value:
                     results.append({
@@ -167,9 +230,38 @@ def extract_tables(url: str):
 
         return results
 
-    except Exception:
+    except Exception as e:
+        print("[TABLE ERROR]", e)
         return []
 
+def parse_table_numeric(value: str):
+    import re
+
+    value_lower = value.lower()
+
+    # normalize units spacing
+    value_lower = value_lower.replace("m a h", "mah")
+    value_lower = value_lower.replace("w h", "wh")
+
+    # ---- find mah pattern ----
+    match = re.search(r"(\d{3,5})\s*mah", value_lower)
+
+    if match:
+        return {
+            "value": int(match.group(1)),
+            "unit": "mah"
+        }
+
+    # ---- fallback: wh (convert optional later) ----
+    match = re.search(r"(\d+(\.\d+)?)\s*wh", value_lower)
+
+    if match:
+        return {
+            "value": float(match.group(1)),
+            "unit": "wh"
+        }
+
+    return None
 
 
 # ---- Function ----

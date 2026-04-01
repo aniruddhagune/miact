@@ -36,11 +36,12 @@ ASPECT_KEYWORDS = {
     "design": ["design", "build", "body"],
     "price": ["price", "cost"],
     "biometric": ["fingerprint", "scanner", "face", "facial"],
-    "certification": ["ip", "water-resistant", "waterproof"],
+    "specifications": ["ip", "water-resistant", "waterproof"],
     "speakers": ["speaker", "speakers", "stereo", "mono"],
     "performance": ["performance", "speed", "fast", "slow"],
     "audio": ["audio", "sound"],
-    "power": ["power"]
+    "power": ["power"],
+    "charging": ["charging", "wireless charging", "wired charging", "fast charging", "Quick Charge", "Warp Charge", "SuperVOOC", "HyperCharge", "SuperCharge", "Power Delivery"] 
 }
 
 ASPECT_MAPPING = {
@@ -53,16 +54,24 @@ ASPECT_MAPPING = {
 }
 
 
-NON_ASPECT_TERMS = [
+NOISE_TERMS = [
+    "model", "version", "edition",
+    "specs", "specification", "specifications"
+]
+
+CATEGORY_TERMS = [
     "smartphone", "phone", "mobile", "device",
-    "max", "pro", "series",
-    "model", "version", "edition", "specs", "specifications"
+    "laptop", "notebook"
+]
+
+DESCRIPTOR_TERMS = [
+    "max", "pro", "plus", "ultra", "series"
 ]
 
 # Numeric Extraction
 
 TECH_NUMERIC_PATTERNS = [
-    r"(\d+(?:\.\d+)?)\s*(mah)",
+    r"([\d,]+(?:\.\d+)?)\s*(mah)",
     r"(\d+(?:\.\d+)?)\s*(mp|megapixel|megapixels)",
     r"(\d+(?:\.\d+)?)\s*(mm)",
     r"(\d+(?:\.\d+)?)\s*(px|pixels|ppi)",
@@ -81,6 +90,8 @@ UNIT_ASPECT_MAPPING = {
     "mb": "storage",
 
     "mah": "battery",
+    "mA·h": "battery",
+    "mA h": "battery",
 
     "hz": "display",
     "ppi": "display",

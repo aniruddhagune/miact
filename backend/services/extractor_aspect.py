@@ -7,15 +7,17 @@ nlp = spacy.load("en_core_web_sm")
 def extract_aspects(sentence: str, domain: str = "generic"):
     # ---- load domain-specific config ----
     if domain == "tech":
-        from domains.tech import (
+        from backend.domains.tech import (
             ASPECT_KEYWORDS,
             ASPECT_MAPPING,
-            NON_ASPECT_TERMS
+            NOISE_TERMS,
+            CATEGORY_TERMS
         )
     else:
         ASPECT_KEYWORDS = {}
         ASPECT_MAPPING = {}
-        NON_ASPECT_TERMS = []
+        NOISE_TERMS = {}
+        CATEGORY_TERMS = {}
 
     sentence_lower = sentence.lower()
     found_aspects = set()
@@ -33,23 +35,22 @@ def extract_aspects(sentence: str, domain: str = "generic"):
     doc = nlp(sentence)
 
     for token in doc:
-        if token.pos_ == "NOUN":
+        if token.pos_ in ["NOUN", "PROPN"]:
             if token.dep_ in ["dobj", "nsubj", "pobj", "attr"]:
                 word = token.text.lower()
 
-                # skip numbers/spec noise
                 if any(char.isdigit() for char in word):
                     continue
 
-                # skip generic noise
-                if word in NON_ASPECT_TERMS:
+                if word in NOISE_TERMS:
                     continue
 
-                # 🔥 NEW: avoid ultra-generic nouns
+                if word in CATEGORY_TERMS:
+                    continue
+
                 if len(word) <= 2:
                     continue
 
-                # 🔥 NEW: ignore vague nouns
                 if word in ["thing", "part", "feature", "system"]:
                     continue
 

@@ -3,12 +3,9 @@
 DOMAIN_SIGNALS = {
     "tech": [
         "phone", "laptop", "desktop", "pc"
-
-        "battery", "camera", "display", "processor", "ram", "storage", "snapdragon", "intel",
-        
-        "ryzen",
-        
-        "vs", "compare"
+        "battery", "camera", "display", "processor", "ram", "storage",
+        "snapdragon", "intel", "ryzen",
+        "vs",
     ],
 
     "news": [
