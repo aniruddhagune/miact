@@ -1,7 +1,9 @@
 import re
 from backend.services.extractor_aspect import extract_aspects
-from services.objectivity_classifier import classify_sentence
+from backend.services.objectivity_classifier import classify_sentence
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+analyzer = SentimentIntensityAnalyzer()
 
 def split_sentence(sentence: str):
     parts = re.split(
@@ -29,11 +31,28 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
             sentiment = "neutral"
 
         unique_aspects = set(aspects)
+        score = analyzer.polarity_scores(part)["compound"]
 
-        for aspect in unique_aspects:
+        if not unique_aspects and abs(score) >= 0.25:
+            unique_aspects.add("overall impression")
+
+        if not unique_aspects:
+            continue
+
+        if len(unique_aspects) > 1:
+            aspect = "multiple"
             results.append({
                 "aspect": aspect,
                 "sentiment": sentiment,
+                "score": score,
+                "text": part
+            })
+        else:
+            aspect = list(unique_aspects)[0]
+            results.append({
+                "aspect": aspect,
+                "sentiment": sentiment,
+                "score": score,
                 "text": part
             })
 

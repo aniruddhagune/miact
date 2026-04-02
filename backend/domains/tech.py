@@ -112,7 +112,7 @@ UNIT_ASPECT_MAPPING = {
 
 TECH_NAMED_PATTERNS = [
     # Handheld
-    r"(snapdragon\s?\d+)",
+    r"(snapdragon\s?\d+(?:\s?gen\s?\d+)?)",
     r"(mediatek\s?\w+\s?\d*)",
     r"(apple\s?\d+\s?\d+\w*)",
     r"(arm\s?\d+\s?\d+\w*)",
@@ -153,6 +153,9 @@ NAMED_ENTITY_MAPPING = {
 # Dates
 
 TECH_DATE_KEYWORDS = {
-    "release_date": ["release", "released", "unveiled", "launched"],
+    "release_date": ["release", "released", "launched"],
+    "announcement_date": ["announce", "announced"],
+    "revealed_date": ["reveal", "revealed", "showcased", "unveiled"],
+    "discontinued_date": ["discontinued", "retired"],
     "update_date": ["update", "updated", "updates until"]
 }

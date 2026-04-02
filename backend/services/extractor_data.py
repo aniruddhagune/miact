@@ -34,11 +34,16 @@ def extract_numeric(sentence, aspects):
             unit = match.group(2).lower()
 
             aspect = UNIT_ASPECT_MAPPING.get(unit)
-            if not aspect:
-                continue
-
+            
             # ---- CONTEXT VALIDATION ----
             context_window = sentence_lower[max(0, match.start()-40):match.end()+40]
+
+            if aspect == "storage" and unit in ["gb", "mb", "tb"]:
+                if "ram" in context_window or "memory" in context_window:
+                    aspect = "ram"
+            
+            if not aspect:
+                continue
 
             # require aspect keyword in context
             from backend.domains.tech import ASPECT_KEYWORDS
@@ -137,6 +142,9 @@ def extract_dates(sentence, domain="tech"):
             for key, words in keywords.items():
                 if any(w in sentence_lower for w in words):
                     label = key
+
+            if label == "date":
+                continue # Skip generic dates without context
 
             results.append({
                 "aspect": label,

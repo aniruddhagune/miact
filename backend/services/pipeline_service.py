@@ -6,6 +6,7 @@ from backend.services.detector_subjects import *
 
 from backend.services.extractor_data import extract_attributes, extract_tables, parse_table_numeric
 from backend.services.utils import deduplicate_attributes
+from backend.services.mapper_aspect_sentiment import analyze_aspect_sentiment
 
 
 def process_query_url(parsed: dict, url: str):
@@ -24,6 +25,7 @@ def process_query_url(parsed: dict, url: str):
         return None
 
     results = []
+    seen_objective_aspects = set()
 
     tables = data.get("tables", [])
     print("\n[DEBUG] TABLES COUNT:", len(tables))
@@ -45,6 +47,11 @@ def process_query_url(parsed: dict, url: str):
             matched_subjects = subjects
 
         for subject in matched_subjects:
+            key = (subject, row["aspect"])
+            if key in seen_objective_aspects:
+                continue
+            seen_objective_aspects.add(key)
+
             results.append({
                 "entity": subject,
                 "aspect": row["aspect"],
@@ -82,6 +89,7 @@ def process_query_url(parsed: dict, url: str):
 
             attributes = extract_attributes(part, domain)
             attributes = deduplicate_attributes(attributes)
+            sentiment_aspects = analyze_aspect_sentiment(part, domain)
 
             query_attribute = parsed.get("attribute")
 
@@ -93,20 +101,19 @@ def process_query_url(parsed: dict, url: str):
                     a for a in attributes
                     if a.get("aspect") == query_attribute
                 ]
+                sentiment_aspects = [
+                    sa for sa in sentiment_aspects
+                    if sa.get("aspect") == query_attribute
+                ]
 
             for subject in matched_subjects:
                 for attr in attributes:
-                    key = (
-                        subject,
-                        attr["aspect"],
-                        str(attr["value"]),
-                        str(attr.get("unit"))
-                    )
+                    key = (subject, attr["aspect"])
 
-                    if key in seen_global:
+                    if key in seen_objective_aspects:
                         continue
 
-                    seen_global.add(key)
+                    seen_objective_aspects.add(key)
 
                     results.append({
                         "entity": subject,
@@ -116,5 +123,61 @@ def process_query_url(parsed: dict, url: str):
                         "type": attr.get("type"),
                         "source": url
                     })
+                
+                for sa in sentiment_aspects:
+                    key = (
+                        subject,
+                        sa["aspect"],
+                        "subjective",
+                        sa["sentiment"]
+                    )
+
+                    if key in seen_global:
+                        continue
+
+                    seen_global.add(key)
+
+                    results.append({
+                        "entity": subject,
+                        "aspect": sa["aspect"],
+                        "sentiment": sa["sentiment"],
+                        "score": sa["score"],
+                        "text": sa["text"],
+                        "type": "subjective",
+                        "source": url
+                    })
+    try:
+        from backend.database.helpers import get_or_create_entity, get_or_create_source, create_document_if_not_exists
+        from backend.database.attribute_repository import insert_attribute
+
+        source_id = get_or_create_source(url)
+        create_document_if_not_exists(url, source_id)
+
+        for r in results:
+            ent = r.get("entity")
+            if not ent:
+                continue
+            
+            ent_id = get_or_create_entity(ent)
+            
+            if r.get("type") == "subjective":
+                val = r.get("text", "")
+                conf_score = r.get("score", 0.0)
+            else:
+                val = r.get("value", "")
+                conf_score = 1.0
+
+            insert_attribute(
+                entity_id=ent_id,
+                document_id=url,
+                aspect=r.get("aspect", ""),
+                value=str(val),
+                unit=r.get("unit"),
+                attr_type=r.get("type", "unknown"),
+                confidence_score=conf_score
+            )
+            
+    except Exception as e:
+        print(f"[DB Error] Could not persist results for {url}: {e}")
 
     return results

@@ -3,4 +3,4 @@ venv/
 *.old
 *.pyc
 *.zip
-output.txt
+*.txt

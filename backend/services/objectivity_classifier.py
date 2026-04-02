@@ -1,6 +1,6 @@
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from services.analyzer_sentiment import NEGATIVE_WORDS, OPINION_WORDS
+from backend.services.analyzer_sentiment import NEGATIVE_WORDS, OPINION_WORDS
 
 nlp = spacy.load("en_core_web_sm")
 analyzer = SentimentIntensityAnalyzer()
