@@ -203,6 +203,26 @@ function App() {
     }
   };
 
+  const formatSpecValue = (val) => {
+    if (!val) return null;
+    // Split main value from parenthetical detail — render inline, not block
+    const match = val.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
+    if (match) {
+        const major = match[1].trim();
+        const minor = match[2] ? `(${match[2]})` : null;
+        return (
+            <span>
+                <span className="text-major">{major}</span>
+                {minor && <span className="text-minor">{minor}</span>}
+            </span>
+        );
+    }
+    return <span className="text-major">{val}</span>;
+  };
+
+  // Detect aspects that should use '/' inline joining (bands, freq-style, simple lists)
+  const isBandAspect = (asp) => /bands?|frequency|freq|lte|gsm|wcdma|hspa|nr|5g|4g|3g|2g/i.test(asp);
+
   const renderResults = (q) => {
     if (q.error) return <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-500 rounded-md font-inter">{q.error}</div>;
 
@@ -227,24 +247,56 @@ function App() {
         records.forEach(r => {
             if (r.type === 'table') allObjective.push({ ...r, entity: en });
             else if (r.type === 'score') allScores.push({ ...r, entity: en });
-            else if (r.type === 'subjective' && r.score !== null) allSubjective.push({ ...r, entity: en });
+            else if (r.type === 'subjective' && r.score !== null && r.score !== 0) allSubjective.push({ ...r, entity: en });
         });
     });
 
+    // Frontend deduplication: remove exact (aspect, value) copies across sources
+    const objSeen = new Set();
+    const dedupedObjective = allObjective.filter(r => {
+        const key = `${r.aspect}|||${String(r.value).toLowerCase().trim()}`;
+        if (objSeen.has(key)) return false;
+        objSeen.add(key);
+        return true;
+    });
+
     const aspectMap = {};
-    allObjective.forEach(r => {
+    dedupedObjective.forEach(r => {
         if (!aspectMap[r.aspect]) aspectMap[r.aspect] = {};
         aspectMap[r.aspect][r.entity] = r;
     });
     const aspectKeys = Object.keys(aspectMap);
-
-    const subjectiveMap = {};
+    
     const scoreMap = {};
+    const subjectiveMap = {};
     entities.forEach(en => { 
-       subjectiveMap[en] = [];
        scoreMap[en] = [];
+       
+       // Sort Subjective opinions for this entity
+       const rawSubjective = allSubjective.filter(r => r.entity === en);
+       
+       // Prioritization logic
+       const TANGIBLE_TERMS = ["feel", "build", "performance", "speed", "camera", "battery", "display", "screen", "price", "value"];
+       const factAspects = Object.keys(aspectMap);
+       
+       const sorted = rawSubjective.sort((a, b) => {
+           const aAsp = a.aspect.toLowerCase();
+           const bAsp = b.aspect.toLowerCase();
+           
+           const aIsFact = factAspects.includes(aAsp);
+           const bIsFact = factAspects.includes(bAsp);
+           if (aIsFact !== bIsFact) return aIsFact ? -1 : 1;
+           
+           const aIsTangible = TANGIBLE_TERMS.some(t => aAsp.indexOf(t) !== -1);
+           const bIsTangible = TANGIBLE_TERMS.some(t => bAsp.indexOf(t) !== -1);
+           if (aIsTangible !== bIsTangible) return aIsTangible ? -1 : 1;
+           
+           return 0;
+       });
+       
+       subjectiveMap[en] = sorted;
     });
-    allSubjective.forEach(r => subjectiveMap[r.entity].push(r));
+
     allScores.forEach(r => scoreMap[r.entity].push(r));
 
     return (
@@ -280,20 +332,37 @@ function App() {
                                      key={en} 
                                      className="p-4 border-b border-white/5 font-mono text-emerald-400"
                                   >
-                                     {rec ? (
-                                        <div className="flex flex-col gap-1.5">
-                                           {`${rec.value} ${rec.unit || ''}`.split(/(?:,\s*|\s*\+\s*)/).filter(Boolean).map((item, idx) => (
-                                               <div key={idx} className="block w-full text-emerald-400/90 group relative">
-                                                  {item.trim()}
-                                                  {rec.source && (
-                                                     <a href={rec.source} target="_blank" rel="noreferrer" title={rec.source} className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-slate-500 hover:text-blue-400 inline-block align-middle">
-                                                        <LinkIcon size={12} className="inline" />
-                                                     </a>
-                                                  )}
-                                               </div>
-                                           ))}
-                                        </div>
-                                     ) : '-'}
+                                      {rec ? (
+                                         <div className="flex flex-col gap-1">
+                                            {(() => {
+                                               const raw = `${rec.value} ${rec.unit || ''}`.trim();
+                                               const parts = raw.split(/(?:,\s*|\s*\+\s*)/).filter(Boolean).map(s => s.trim());
+                                               // For band-like aspects, join inline with '/'
+                                               if (isBandAspect(rec.aspect) || parts.length > 3) {
+                                                 return (
+                                                   <span className="group relative">
+                                                     {formatSpecValue(parts.join(' / '))}
+                                                     {rec.source && (
+                                                        <a href={rec.source} target="_blank" rel="noreferrer" title={rec.source} className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-slate-500 hover:text-blue-400 inline-block align-middle">
+                                                           <LinkIcon size={12} className="inline" />
+                                                        </a>
+                                                     )}
+                                                   </span>
+                                                 );
+                                               }
+                                               return parts.map((item, idx) => (
+                                                   <div key={idx} className="block w-full group relative">
+                                                      {formatSpecValue(item)}
+                                                      {rec.source && (
+                                                         <a href={rec.source} target="_blank" rel="noreferrer" title={rec.source} className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-slate-500 hover:text-blue-400 inline-block align-middle">
+                                                            <LinkIcon size={12} className="inline" />
+                                                         </a>
+                                                      )}
+                                                   </div>
+                                               ));
+                                            })()}
+                                         </div>
+                                      ) : '-'}
                                   </td>
                                );
                             })}
@@ -308,48 +377,67 @@ function App() {
                                   <h4 className="text-[28px] font-oswald text-slate-300 font-medium uppercase tracking-[0.2em] relative before:content-[''] before:absolute before:w-[60px] before:h-px before:bg-slate-600 before:right-full before:top-1/2 before:mr-4 after:content-[''] after:absolute after:w-[60px] after:h-px after:bg-slate-600 after:left-full after:top-1/2 after:ml-4 inline-block">OPINIONS</h4>
                                </td>
                             </tr>
-                            {/* Score Block row */}
+                            {/* Score Block row - full-width spanning */}
                             <tr>
-                               <td className="border-none"></td>
-                               {entities.map(en => (
-                                   <td key={`${en}-scores`} className="border-none pb-6 align-top">
-                                      <div className="flex flex-wrap gap-2 justify-center">
-                                          {scoreMap[en].map(score => (
+                               <td colSpan={entities.length + 1} className="border-none pb-6 align-top">
+                                  {(() => {
+                                     // Only show scores for tangible, meaningful aspects
+                                     const MEANINGFUL_SCORE_ASPECTS = new Set([
+                                        "camera", "cameras", "battery", "display", "screen", "performance",
+                                        "build", "design", "software", "charging", "speakers", "audio",
+                                        "speed", "value", "price", "overall", "overall impression", "gaming",
+                                        "photography", "video", "multiple"
+                                     ]);
+                                     const allValidScores = entities.flatMap(en =>
+                                        scoreMap[en].filter(s => MEANINGFUL_SCORE_ASPECTS.has(s.aspect.toLowerCase()))
+                                     );
+                                     if (!allValidScores.length) return null;
+                                     return (
+                                        <div className="flex flex-wrap gap-2 justify-center">
+                                           {allValidScores.map(score => (
                                               <div key={score.aspect} className="bg-slate-800/80 rounded-lg px-3 py-2 border border-white/10 flex items-center gap-2">
                                                  <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">{score.aspect}:</span>
                                                  <span className={`text-[15px] font-mono font-bold ${score.value >= 7 ? 'text-emerald-400' : score.value >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
                                                     {score.value}/10
                                                  </span>
                                               </div>
-                                          ))}
-                                      </div>
-                                   </td>
-                               ))}
+                                           ))}
+                                        </div>
+                                     );
+                                  })()}
+                               </td>
                             </tr>
+                            {/* Opinion Cards - full-width, properly centered */}
                             <tr>
-                               <td className="border-none"></td>
-                               {entities.map(en => (
-                                  <td 
-                                     key={en} 
-                                     className="border-none align-top pt-2 px-2"
-                                  >
-                                     <div className={`mx-auto w-full grid ${entities.length === 1 ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1 gap-4'} place-items-center items-start`}>
-                                        {subjectiveMap[en].map((r, k) => {
-                                            const tier = getSentimentTier(r.score);
-                                            const isPos = r.score > 0;
-                                            return (
-                                               <div key={k} className={`w-full max-w-lg bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col justify-center items-center text-center shadow-lg transition-transform duration-300 hover:-translate-y-1 ${isPos?'border-t-[3px] border-t-emerald-500':'border-t-[3px] border-t-red-500'}`}>
-                                                  <div className="w-full flex justify-between items-center mb-3">
-                                                     <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-semibold capitalize text-slate-300 shadow-inner">{r.aspect}</span>
-                                                     <span className={`text-[11px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${isPos?'bg-emerald-500/10 text-emerald-400':'bg-red-500/10 text-red-400'}`}>{tier}</span>
+                               <td colSpan={entities.length + 1} className="border-none align-top pt-2 px-4">
+                                  {entities.map(en => (
+                                     <div key={en}>
+                                        {entities.length > 1 && (
+                                           <p className="text-center text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">{en}</p>
+                                        )}
+                                        <div className={`w-full grid ${entities.length === 1 ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1 md:grid-cols-2 gap-4'} place-items-center items-start`}>
+                                           {subjectiveMap[en].map((r, k) => {
+                                               const tier = getSentimentTier(r.score);
+                                               if (!tier) return null;
+                                               const isPos = r.score > 0;
+                                               const isUser = r.metadata?.user_review;
+                                               return (
+                                                  <div key={k} className={`w-full bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${isPos?'border-t-[3px] border-t-emerald-500':'border-t-[3px] border-t-red-500'}`}>
+                                                     <div className="w-full flex justify-between items-center mb-3">
+                                                        <div className="flex gap-2">
+                                                           <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-semibold capitalize text-slate-300 shadow-inner">{r.aspect}</span>
+                                                           {isUser && <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter self-center border border-blue-500/30">User</span>}
+                                                        </div>
+                                                        <span className={`text-[11px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${isPos?'bg-emerald-500/10 text-emerald-400':'bg-red-500/10 text-red-400'}`}>{tier}</span>
+                                                     </div>
+                                                     <p className="m-0 text-[14px] text-slate-300 italic leading-relaxed font-inter">"{r.text}"</p>
                                                   </div>
-                                                  <p className="m-0 text-[15px] text-slate-300 italic leading-relaxed font-inter">"{r.text}"</p>
-                                               </div>
-                                            );
-                                        })}
+                                               );
+                                           })}
+                                        </div>
                                      </div>
-                                  </td>
-                                ))}
+                                  ))}
+                               </td>
                             </tr>
                          </>
                       )}
@@ -454,7 +542,7 @@ function App() {
         </button>
 
         {/* Floating Sources Card (Tab interface) */}
-        <div className={`absolute top-6 right-8 w-[380px] max-h-[500px] z-[100] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5 p-5 rounded-2xl bg-black/80 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${showSourcesPopup && queries[activeChat]?.urls && activeSourceTab ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none origin-top-right'}`}>
+        <div className={`absolute top-6 right-8 w-[420px] max-h-[80vh] z-[100] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5 p-5 rounded-3xl bg-black/80 backdrop-blur-3xl transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${showSourcesPopup && queries[activeChat]?.urls && activeSourceTab ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none origin-top-right'}`}>
             <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 relative">
                <h4 className="m-0 text-white font-oswald text-[28px] uppercase tracking-widest font-medium mx-auto">SOURCES</h4>
                <button onClick={() => setShowSourcesPopup(false)} className="absolute right-0 bg-transparent border-none text-slate-400 text-3xl hover:text-white cursor-pointer transition-colors leading-[0] outline-none mb-1">&times;</button>

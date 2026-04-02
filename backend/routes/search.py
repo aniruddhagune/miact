@@ -86,6 +86,10 @@ async def search(query: str, t: str = None):
                 extracted_results = []
                 fact_urls = []
                 
+                # Entity-specific parsed: treat this entity as if it were the only one
+                # so the pipeline behaves the same as single-entity mode
+                entity_parsed = {**parsed, "entities": [entity], "original": entity}
+                
                 # --- SYNCHRONOUS FACT CASCADE ---
                 has_enough_facts = False
                 for domain in ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]:
@@ -109,13 +113,12 @@ async def search(query: str, t: str = None):
                         yield f"data: {json.dumps({'step': 'partial', 'entity': entity, 'url': url})}\n\n"
                         try:
                             import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, parsed, url)
+                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_objective=True)
                         except Exception as e:
                             print(f"Error processing URL {url}: {e}")
                             pipeline_results = None
                             
                         if pipeline_results:
-                            # Keep only factual elements from this sweep
                             extracted_results.extend([x for x in pipeline_results if x.get("type", "") in ["table", "text"]])
                             
                             found_aspects = {x["aspect"] for x in extracted_results if x.get("type", "") == "table"}
@@ -136,12 +139,13 @@ async def search(query: str, t: str = None):
                         yield f"data: {json.dumps({'step': 'partial', 'entity': f'{entity} Reviews', 'url': url})}\n\n"
                         try:
                             import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, parsed, url)
-                            if pipeline_results:
-                                # Keep only subjective sentiments
-                                extracted_results.extend([x for x in pipeline_results if x.get("type", "") == "subjective"])
+                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_subjective=True)
                         except Exception as e:
                             print(f"Error processing review URL {url}: {e}")
+                            pipeline_results = None
+                        
+                        if pipeline_results:
+                            extracted_results.extend([x for x in pipeline_results if x.get("type", "") == "subjective"])
                             
                 urls_dict[entity] = {"query": entity, "urls": fact_urls + review_urls}
                 yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"

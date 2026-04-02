@@ -6,8 +6,9 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 analyzer = SentimentIntensityAnalyzer()
 
 def split_sentence(sentence: str):
+    # Only split on strong adversative conjunctions — preserve commas so opinions stay complete
     parts = re.split(
-        r"\bbut\b|\band\b|\bwhile\b|\bhowever\b|;|,",
+        r"\bbut\b|\bhowever\b|\bwhereas\b|\bnevertheless\b|;",
         sentence,
         flags=re.IGNORECASE
     )

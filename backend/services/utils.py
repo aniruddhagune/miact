@@ -5,10 +5,11 @@ def deduplicate_attributes(attributes):
     seen = set()
 
     for attr in attributes:
+        # Case-insensitive, space-normalized value check
+        val_clean = str(attr.get("value", "")).lower().strip()
         key = (
-            attr["aspect"],
-            str(attr["value"]),
-            str(attr.get("unit"))
+            attr["aspect"].lower().strip(),
+            val_clean
         )
 
         if key not in seen:

@@ -1,19 +1,41 @@
 /* Custom Animations & Keyframes */
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes floatIn {
-  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes subtleOuterGlow {
-  0% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2)); }
-  50% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5)); }
-  100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2)); }
+  0% {
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
+  }
+
+  100% {
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+  }
 }
 
 .animate-fade-in-up {
@@ -30,7 +52,7 @@
 
 /* Glassmorphism Classes */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(30, 41, 59, 0.65);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -45,28 +67,58 @@
   width: 8px;
   height: 8px;
 }
+
+.text-major {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.text-minor {
+  font-size: 12.5px;
+  opacity: 0.55;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
 ::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #111;
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #222;
 }
 
 @keyframes slideDownFadeIn {
-  0% { transform: translateY(-30px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideDownFadeOut {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(30px); opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
 }
 
 .animate-welcome-in {

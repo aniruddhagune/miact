@@ -1,3 +1,4 @@
+import re
 from backend.services.preprocessing import *
 
 from backend.services.extractor_content import extract_content
@@ -9,7 +10,50 @@ from backend.services.utils import deduplicate_attributes
 from backend.services.mapper_aspect_sentiment import analyze_aspect_sentiment
 
 
-def process_query_url(parsed: dict, url: str):
+def is_valid_opinion(text, aspect, score):
+    # Discard exactly-zero scores (neutral)
+    if score is None or score == 0:
+        return False
+
+    text_str = text.strip()
+    text_lower = text_str.lower()
+    words = text_str.split()
+
+    # Tangible terms / direct aspect match
+    TANGIBLE_TERMS = ["feel", "build", "performance", "speed", "camera", "battery",
+                      "display", "screen", "price", "value", "design", "quality",
+                      "software", "smooth", "fast", "slow", "hot", "heat", "lag"]
+    is_tangible = any(t in text_lower for t in TANGIBLE_TERMS)
+    is_overall = any(k in text_lower for k in ["phone", "device", "overall", "recommend", "worth"])
+
+    # Direct aspect phrase: e.g. "great camera", "poor battery" — allow short if clear sentiment word
+    SENTIMENT_WORDS = ["great", "excellent", "good", "bad", "terrible", "poor", "amazing",
+                       "love", "hate", "worst", "best", "awful", "incredible", "disappointing",
+                       "impressive", "mediocre", "solid", "decent", "weak", "strong"]
+    is_direct_aspect = is_tangible and any(s in text_lower for s in SENTIMENT_WORDS)
+
+    # Fragment checks
+    if text_str and text_str[0].islower() and not is_direct_aspect:
+        return False  # Likely a mid-sentence fragment
+    if text_str and text_str[-1] in (',', ':', '-', '–'):
+        return False  # Trailing incomplete punctuation
+
+    # Minimum length — short only allowed for direct aspect matches
+    if len(words) < 7 and not is_direct_aspect:
+        return False
+
+    # Reject high digit ratio — likely a technical spec, not an opinion
+    digit_words = sum(1 for w in words if re.match(r'^\d+[\d.,x%GBMHzms]*$', w))
+    if len(words) > 0 and digit_words / len(words) > 0.3:
+        return False
+
+    # Require some word variety
+    if len(set(w.lower() for w in words)) < 3:
+        return False
+
+    return True
+
+def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False):
     query = parsed.get("original", "")
     domain = detect_domain(query)
 
@@ -27,7 +71,7 @@ def process_query_url(parsed: dict, url: str):
     results = []
     seen_objective_aspects = set()
 
-    tables = data.get("tables", [])
+    tables = data.get("tables", []) if not only_subjective else []
     print("\n[DEBUG] TABLES COUNT:", len(tables))
 
     for row in tables:
@@ -95,11 +139,13 @@ def process_query_url(parsed: dict, url: str):
             if not matched_subjects:
                 continue
 
-            attributes = extract_attributes(part, domain)
-            attributes = deduplicate_attributes(attributes)
+            attributes = []
+            if not only_subjective:
+                attributes = extract_attributes(part, domain)
+                attributes = deduplicate_attributes(attributes)
             
             sentiment_aspects = []
-            if is_review:
+            if is_review and not only_objective:
                 sentiment_aspects = analyze_aspect_sentiment(part, domain)
 
             query_attribute = parsed.get("attribute")
@@ -167,33 +213,37 @@ def process_query_url(parsed: dict, url: str):
                     })
 
     # ---- GSMARENA OPINIONS (NEW) ----
-    gsm_opinions = data.get("opinions", [])
-    for op in gsm_opinions:
-        op_text = op["text"]
-        # Treat each opinion like a review sentence
-        sentiment_aspects = analyze_aspect_sentiment(op_text, domain)
-        
-        # Determine subjects (assume main subjects if not mentioned)
-        matched_subjects = detect_subjects(op_text, alias_map)
-        if not matched_subjects:
-            matched_subjects = subjects
+    if not only_objective:
+        gsm_opinions = data.get("opinions", [])
+        for op in gsm_opinions:
+            op_text = op["text"]
+            # Treat each opinion like a review sentence
+            sentiment_aspects = analyze_aspect_sentiment(op_text, domain)
+            
+            # Determine subjects (assume main subjects if not mentioned)
+            matched_subjects = detect_subjects(op_text, alias_map)
+            if not matched_subjects:
+                matched_subjects = subjects
 
-        for subject in matched_subjects:
-            for sa in sentiment_aspects:
-                text_key = (subject, sa["text"].lower())
-                if text_key in seen_subjective_texts:
-                    continue
-                seen_subjective_texts.add(text_key)
+            for subject in matched_subjects:
+                for sa in sentiment_aspects:
+                    if not is_valid_opinion(sa["text"], sa["aspect"], sa["score"]):
+                        continue
+                        
+                    text_key = (subject, sa["text"].lower())
+                    if text_key in seen_subjective_texts:
+                        continue
+                    seen_subjective_texts.add(text_key)
 
-                results.append({
-                    "entity": subject,
-                    "aspect": sa["aspect"],
-                    "sentiment": sa["sentiment"],
-                    "score": sa["score"],
-                    "text": sa["text"],
-                    "type": "subjective",
-                    "source": url,
-                    "metadata": {"user_review": True} # Flag for UI
-                })
+                    results.append({
+                        "entity": subject,
+                        "aspect": sa["aspect"],
+                        "sentiment": sa["sentiment"],
+                        "score": sa["score"],
+                        "text": sa["text"],
+                        "type": "subjective",
+                        "source": url,
+                        "metadata": {"user_review": True} # Flag for UI
+                    })
 
     return results

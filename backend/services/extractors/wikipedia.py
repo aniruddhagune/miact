@@ -38,6 +38,20 @@ def extract(url: str):
         infobox = soup.find("table", {"class": "infobox"})
 
         if infobox:
+            caption = infobox.find("caption")
+            if caption:
+                cap_text = caption.get_text(strip=True).lower()
+                # Wider set of company indicators
+                BAD_KEYWORDS = [
+                    "technology (shenzhen)", "company", "co. ltd.", 
+                    "corporation", "limited", "inc.", "co., ltd",
+                    "subsidiary", "manufacturer", "joint venture"
+                ]
+                if any(kw in cap_text for kw in BAD_KEYWORDS):
+                    print(f"[WIKI] Rejecting infobox due to company caption: {cap_text}")
+                    infobox = None # Skip this infobox
+
+        if infobox:
             rows = infobox.find_all("tr")
 
             for row in rows:
@@ -48,6 +62,10 @@ def extract(url: str):
                     continue
 
                 key = header.get_text(strip=True).lower()
+                
+                # ---- REFERENCE FILTER ----
+                if "reference" in key or "cite" in key:
+                    continue
                 
                 # ---- PLAINLIST HANDLING (Colors, etc.) ----
                 plainlist = data.find("div", class_="plainlist")

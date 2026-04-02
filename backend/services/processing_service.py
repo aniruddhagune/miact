@@ -1,5 +1,7 @@
 from backend.database.helpers import get_or_create_entity, get_or_create_source, create_document_if_not_exists
 from backend.database.attribute_repository import insert_attribute
+from backend.domains.regions import resolve_region
+import re
 
 def group_variants_and_persist(results_dict: dict):
     final_dict = {}
@@ -14,11 +16,26 @@ def group_variants_and_persist(results_dict: dict):
         other_items = []
 
         for r in items:
-            aspect = r.get("aspect", "")
-            val = str(r.get("value", ""))
+            aspect = r.get("aspect", "").lower().strip()
+            val = str(r.get("value", "")).strip()
             unit = r.get("unit")
             
-            # Merge variants specifically for GSM/Tech Specs
+            # ---- BAND FORMATTING ----
+            if "bands" in aspect:
+                # Replace multiple lines/spaces with commas/slashes
+                val = re.sub(r"\s*\n\s*|\s{2,}", ", ", val)
+                val = val.replace(" ,", ",").replace(",,", ",")
+            
+            # ---- REGIONAL MAPPING ----
+            # Check for leading regional tags like "EU: 128GB" or "(NA)"
+            region_match = re.search(r"^([A-Z]{2,5})\s*[:\-]\s*|\s*\(([A-Z]{2,5})\)\s*$", val)
+            if region_match:
+                code = region_match.group(1) or region_match.group(2)
+                region_name = resolve_region(code)
+                # Ensure region is prepended or highlighted
+                if region_name.lower() not in val.lower():
+                    val = f"[{region_name}] {val}"
+            
             if aspect in ["display", "screen", "resolution", "refresh rate"]:
                 if unit:
                     val += f" {unit}"
@@ -34,6 +51,7 @@ def group_variants_and_persist(results_dict: dict):
                     val += f" {unit}"
                 storage_specs.append((val, r.get("source")))
             else:
+                r["value"] = val # Update for later use
                 other_items.append(r)
 
         if display_specs:
@@ -66,6 +84,19 @@ def group_variants_and_persist(results_dict: dict):
                     "type": "table",
                     "source": sources_m[0] if sources_m else None
                 })
+        
+        # ---- FINAL DEDUPLICATION & ORDERING ----
+        # Prevent exact copies for the same aspect
+        unique_final = []
+        seen_keys = set()
+        
+        for item in other_items:
+            key = (item["aspect"].lower().strip(), str(item["value"]).lower().strip())
+            if key not in seen_keys:
+                seen_keys.add(key)
+                unique_final.append(item)
+        
+        other_items = unique_final
                 
         # --- ASPECT SCORING LOGIC ---
         subjective_opinions = [r for r in items if r.get("type", "") == "subjective"]
