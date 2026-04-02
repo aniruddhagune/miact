@@ -48,7 +48,14 @@ def extract(url: str):
                     continue
 
                 key = header.get_text(strip=True).lower()
-                value = data.get_text(" ", strip=True)
+                
+                # ---- PLAINLIST HANDLING (Colors, etc.) ----
+                plainlist = data.find("div", class_="plainlist")
+                if plainlist:
+                    items = [li.get_text(strip=True) for li in plainlist.find_all("li")]
+                    value = ", ".join(items)
+                else:
+                    value = data.get_text(" ", strip=True)
 
                 # normalize
                 value = (

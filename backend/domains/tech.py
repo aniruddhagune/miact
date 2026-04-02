@@ -28,7 +28,7 @@ SHOPPING_DOMAINS = [
 ASPECT_KEYWORDS = {
     "battery": ["battery", "battery life",],
     "camera": ["camera", "cameras", "lens", "mp"],
-    "display": ["display", "screen", "resolution", "oled", "amoled", "lcd", "refresh rate"],
+    "display": ["display", "screen", "resolution", "oled", "amoled", "lcd", "refresh rate", "nits"],
     "processor": ["processor", "chip", "cpu", "chipset"],
     "graphics": ["graphics", "gpu"],
     "ram": ["ram", "memory"],
@@ -37,11 +37,12 @@ ASPECT_KEYWORDS = {
     "price": ["price", "cost"],
     "biometric": ["fingerprint", "scanner", "face", "facial"],
     "specifications": ["ip", "water-resistant", "waterproof"],
-    "speakers": ["speaker", "speakers", "stereo", "mono"],
+    "speakers": ["speaker", "speakers", "stereo", "mono", "lufs"],
     "performance": ["performance", "speed", "fast", "slow"],
     "audio": ["audio", "sound"],
     "power": ["power"],
-    "charging": ["charging", "wireless charging", "wired charging", "fast charging", "Quick Charge", "Warp Charge", "SuperVOOC", "HyperCharge", "SuperCharge", "Power Delivery"] 
+    "charging": ["charging", "wireless charging", "wired charging", "fast charging", "Quick Charge", "Warp Charge", "SuperVOOC", "HyperCharge", "SuperCharge", "Power Delivery"],
+    "connectivity": ["bluetooth", "wi-fi", "wifi", "wlan", "wireless"]
 }
 
 ASPECT_MAPPING = {
@@ -80,6 +81,8 @@ TECH_NUMERIC_PATTERNS = [
     r"(\d+(?:\.\d+)?)\s*(w|watts)",
     r"(\d+(?:\.\d+)?)\s*(inch|inches|cm)",
     r"(\d+(?:\.\d+)?)\s*(db|decibels)",
+    r"(\d+(?:\.\d+)?)\s*(nits|nit)",
+    r"(-?\d+(?:\.\d+)?)\s*(lufs)",
 ]
 
 # ---- NUMERIC VALUE → ASPECT REFINEMENT ----
@@ -105,7 +108,11 @@ UNIT_ASPECT_MAPPING = {
     "mm": "camera",
 
     "w": "power",
-    "watts": "power"
+    "watts": "power",
+
+    "nits": "display",
+    "nit": "display",
+    "lufs": "speakers"
 }
 
 # Processor Specific
@@ -131,7 +138,12 @@ TECH_NAMED_PATTERNS = [
     # Storage
     r"(ufs\s?\d+\.\d+)",
     r"(lpddr\d+)",
-    r"(ddr\d+)"
+    r"(ddr\d+)",
+
+    # Connectivity
+    r"(bluetooth\s?\d+(?:\.\d+)?)",
+    r"(wi-fi\s?\d+[a-z]*)",
+    r"(wifi\s?\d+[a-z]*)"
 ]
 
 # ---- NAMED VALUE MAPPING ----
@@ -148,6 +160,7 @@ NAMED_ENTITY_MAPPING = {
     ],
     "storage": ["ufs"],
     "ram": ["lpddr", "ddr"],
+    "connectivity": ["bluetooth", "wi-fi", "wifi"]
 }
 
 # Dates

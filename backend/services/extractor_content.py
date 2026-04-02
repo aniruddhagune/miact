@@ -12,6 +12,18 @@ def extract_content(url: str):
         if result:
             return result
 
+    if "gsmarena.com" in url:
+        from backend.services.extractors.gsmarena import extract as gsm_extract
+        result = gsm_extract(url)
+        if result:
+            return result
+
+    if "devicespecifications.com" in url:
+        from backend.services.extractors.devicespecifications import extract as ds_extract
+        result = ds_extract(url)
+        if result:
+            return result
+
     # ---- PRIMARY: newspaper ----
     try:
         article = Article(url)

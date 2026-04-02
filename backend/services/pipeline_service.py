@@ -36,9 +36,9 @@ def process_query_url(parsed: dict, url: str):
 
     for row in tables:
         parsed_numeric = parse_table_numeric(row["value"])
-
-        if not parsed_numeric:
-            continue
+        
+        final_value = parsed_numeric["value"] if parsed_numeric else row["value"]
+        final_unit = parsed_numeric["unit"] if parsed_numeric else None
 
         matched_subjects = detect_subjects(row["value"], alias_map)
 
@@ -52,22 +52,30 @@ def process_query_url(parsed: dict, url: str):
                 continue
             seen_objective_aspects.add(key)
 
-            results.append({
-                "entity": subject,
-                "aspect": row["aspect"],
-                "value": parsed_numeric["value"],
-                "unit": parsed_numeric["unit"],
-                "type": "table",
-                "source": url
-            })
+            from backend.services.utils import expand_variants
+            variants = expand_variants(row["aspect"], row["value"])
+            
+            for v in variants:
+                results.append({
+                    "entity": subject,
+                    "aspect": row["aspect"],
+                    "value": final_value if len(variants) == 1 else v, # use original parsed if only 1, else split strings
+                    "unit": final_unit if len(variants) == 1 else None,
+                    "type": "table",
+                    "source": url
+                })
 
     if not data:
         return None
+
+    # ---- OPINION RESTRICTOR ----
+    is_review = any(x in url.lower() for x in ["review", "opinion", "hands-on", "verdict"]) or domain in ["gsmarena", "theverge", "engadget", "tomsguide", "zdnet", "techradar"]
 
     cleaned = clean_text(data["text"])
     sentences = split_into_sentences(cleaned)
 
     seen_global = set()
+    seen_subjective_texts = set()
 
     for s in sentences:
         parts = split_comparison(s)
@@ -89,7 +97,10 @@ def process_query_url(parsed: dict, url: str):
 
             attributes = extract_attributes(part, domain)
             attributes = deduplicate_attributes(attributes)
-            sentiment_aspects = analyze_aspect_sentiment(part, domain)
+            
+            sentiment_aspects = []
+            if is_review:
+                sentiment_aspects = analyze_aspect_sentiment(part, domain)
 
             query_attribute = parsed.get("attribute")
 
@@ -125,6 +136,14 @@ def process_query_url(parsed: dict, url: str):
                     })
                 
                 for sa in sentiment_aspects:
+                    raw_text = sa["text"].strip().lower()
+
+                    text_key = (subject, raw_text)
+                    if text_key in seen_subjective_texts:
+                        continue
+                    
+                    seen_subjective_texts.add(text_key)
+
                     key = (
                         subject,
                         sa["aspect"],
@@ -146,38 +165,35 @@ def process_query_url(parsed: dict, url: str):
                         "type": "subjective",
                         "source": url
                     })
-    try:
-        from backend.database.helpers import get_or_create_entity, get_or_create_source, create_document_if_not_exists
-        from backend.database.attribute_repository import insert_attribute
 
-        source_id = get_or_create_source(url)
-        create_document_if_not_exists(url, source_id)
+    # ---- GSMARENA OPINIONS (NEW) ----
+    gsm_opinions = data.get("opinions", [])
+    for op in gsm_opinions:
+        op_text = op["text"]
+        # Treat each opinion like a review sentence
+        sentiment_aspects = analyze_aspect_sentiment(op_text, domain)
+        
+        # Determine subjects (assume main subjects if not mentioned)
+        matched_subjects = detect_subjects(op_text, alias_map)
+        if not matched_subjects:
+            matched_subjects = subjects
 
-        for r in results:
-            ent = r.get("entity")
-            if not ent:
-                continue
-            
-            ent_id = get_or_create_entity(ent)
-            
-            if r.get("type") == "subjective":
-                val = r.get("text", "")
-                conf_score = r.get("score", 0.0)
-            else:
-                val = r.get("value", "")
-                conf_score = 1.0
+        for subject in matched_subjects:
+            for sa in sentiment_aspects:
+                text_key = (subject, sa["text"].lower())
+                if text_key in seen_subjective_texts:
+                    continue
+                seen_subjective_texts.add(text_key)
 
-            insert_attribute(
-                entity_id=ent_id,
-                document_id=url,
-                aspect=r.get("aspect", ""),
-                value=str(val),
-                unit=r.get("unit"),
-                attr_type=r.get("type", "unknown"),
-                confidence_score=conf_score
-            )
-            
-    except Exception as e:
-        print(f"[DB Error] Could not persist results for {url}: {e}")
+                results.append({
+                    "entity": subject,
+                    "aspect": sa["aspect"],
+                    "sentiment": sa["sentiment"],
+                    "score": sa["score"],
+                    "text": sa["text"],
+                    "type": "subjective",
+                    "source": url,
+                    "metadata": {"user_review": True} # Flag for UI
+                })
 
     return results

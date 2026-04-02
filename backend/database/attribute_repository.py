@@ -1,4 +1,4 @@
-from database.connection import get_connection
+from backend.database.connection import get_connection
 
 
 def insert_attribute(

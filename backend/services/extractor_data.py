@@ -58,6 +58,19 @@ def extract_numeric(sentence, aspects):
             if not valid:
                 continue
 
+            # ---- ADVANCED: POWER CONTEXT ----
+            if aspect == "power" and unit in ["w", "watts"]:
+                if "wireless" in context_window:
+                    aspect = "wireless charging"
+                elif "reverse" in context_window:
+                    aspect = "reverse charging"
+                elif "magsafe" in context_window:
+                    aspect = "magsafe"
+                elif "charger" in context_window or "charging" in context_window:
+                    aspect = "wired charging"
+                else:
+                    aspect = "wired charging"
+
             # ---- CONTEXT WINDOW ----
             start = match.start()
             end = match.end()
@@ -141,7 +154,14 @@ def extract_dates(sentence, domain="tech"):
 
             for key, words in keywords.items():
                 if any(w in sentence_lower for w in words):
-                    label = key
+                    # stricter distance check
+                    for w in words:
+                        if w in sentence_lower:
+                            idx = sentence_lower.find(w)
+                            date_idx = sentence_lower.find(text.lower())
+                            if abs(idx - date_idx) < 50:
+                                label = key
+                                break
 
             if label == "date":
                 continue # Skip generic dates without context
@@ -260,13 +280,15 @@ def parse_table_numeric(value: str):
             "unit": "mah"
         }
 
-    # ---- fallback: wh (convert optional later) ----
+    # ---- fallback: wh (convert directly to mAh assuming 3.85V for tech/mobile) ----
     match = re.search(r"(\d+(\.\d+)?)\s*wh", value_lower)
 
     if match:
+        wh_val = float(match.group(1))
+        mah_val = round((wh_val * 1000) / 3.85)
         return {
-            "value": float(match.group(1)),
-            "unit": "wh"
+            "value": mah_val,
+            "unit": "mah"
         }
 
     return None

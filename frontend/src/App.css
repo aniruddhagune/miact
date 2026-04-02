@@ -10,10 +10,10 @@
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes subtleGlow {
-  0% { text-shadow: 0 0 10px rgba(96, 165, 250, 0.2); }
-  50% { text-shadow: 0 0 25px rgba(192, 132, 252, 0.5); }
-  100% { text-shadow: 0 0 10px rgba(96, 165, 250, 0.2); }
+@keyframes subtleOuterGlow {
+  0% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2)); }
+  50% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5)); }
+  100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2)); }
 }
 
 .animate-fade-in-up {
@@ -25,10 +25,10 @@
 }
 
 .welcome-glow {
-  animation: subtleGlow 3s ease-in-out infinite;
+  animation: subtleOuterGlow 3s ease-in-out infinite;
 }
 
-/* Glassmorphism Classes (Supplementing Tailwind logic) */
+/* Glassmorphism Classes */
 .glass-panel {
   background: rgba(30, 41, 59, 0.4);
   backdrop-filter: blur(14px);
@@ -39,18 +39,40 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Aggressive Scoping */
+::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
+::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: #111;
+  border-radius: 9999px;
 }
+::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #222;
+}
+
+@keyframes slideDownFadeIn {
+  0% { transform: translateY(-30px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDownFadeOut {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(30px); opacity: 0; }
+}
+
+.animate-welcome-in {
+  animation: slideDownFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-welcome-out {
+  animation: slideDownFadeOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
