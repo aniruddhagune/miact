@@ -1,14 +1,12 @@
-import requests
 from bs4 import BeautifulSoup
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+from backend.services.http_client import get as http_get
 
 
 def extract(url: str):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = http_get(url, referer="https://en.wikipedia.org/")
+        if not response:
+            return None
         soup = BeautifulSoup(response.text, "html.parser")
 
         content = soup.find("div", {"id": "mw-content-text"})

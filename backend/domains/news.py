@@ -1,12 +1,26 @@
-# Categories
+# News Trusted Domains
 TRUSTED_DOMAINS = [
-    # See if can be scrapped reliably.
-    "https://www.hindustantimes.com/",
-    "https://www.ndtv.com/",
-    "https://timesofindia.indiatimes.com/",
-    "https://www.indiatoday.in/",
-    "https://indianexpress.com/",
+    # International
+    "bbc.com",
+    "reuters.com",
+    "apnews.com",
+    "theguardian.com",
+    "nytimes.com",
+    "aljazeera.com",
+    # India
+    "hindustantimes.com",
+    "ndtv.com",
+    "timesofindia.indiatimes.com",
+    "indiatoday.in",
+    "indianexpress.com",
+    "thehindu.com",
 ]
+
+
+def get_trusted_domains(query_type: str = "news_generic") -> list:
+    """Return news trusted domains (same list for all news subtypes)."""
+    return TRUSTED_DOMAINS
+
 
 NEWS_KEYWORDS = [
     "news", "latest", "update", "war", "election",

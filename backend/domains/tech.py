@@ -1,28 +1,56 @@
-# Trusted Sources
-TRUSTED_DOMAINS = [
-    # Generic
-    "wikipedia.org",
-    # Phones
+# Trusted Sources — per query type
+TRUSTED_DOMAINS_PHONE = [
     "gsmarena.com",
     "devicespecifications.com",
-    # Laptops
-    
-    # Phone Company Sites
-    "oneplus.in",
+    "wikipedia.org",
+    # Phone manufacturer sites
+    "oneplus.in", "oneplus.com",
     "apple.com",
-    "samsuing.com",
+    "samsung.com",
     "mi.com",
-    "realme.com/in/",
+    "realme.com",
     "vivo.com",
     "oppo.com",
-    "motorola.in"
-
+    "motorola.com",
+    "google.com/phones",
+    "nothing.tech",
 ]
+
+TRUSTED_DOMAINS_LAPTOP = [
+    "notebookcheck.net",
+    "rtings.com",
+    "wikipedia.org",
+    "laptopmag.com",
+    "tomsguide.com",
+    "techradar.com",
+    "lenovo.com",
+    "dell.com",
+    "hp.com",
+    "asus.com",
+    "apple.com",
+]
+
+TRUSTED_DOMAINS_GENERAL = [
+    "wikipedia.org",
+]
+
+# Legacy flat list — kept for backward compatibility
+TRUSTED_DOMAINS = TRUSTED_DOMAINS_PHONE + TRUSTED_DOMAINS_LAPTOP
 
 SHOPPING_DOMAINS = [
     "amazon.in",
     "flipkart.com"
 ]
+
+
+def get_trusted_domains(query_type: str) -> list:
+    """Return the right trusted domain list based on parsed query type."""
+    if query_type == "tech_phone":
+        return TRUSTED_DOMAINS_PHONE
+    if query_type == "tech_laptop":
+        return TRUSTED_DOMAINS_LAPTOP
+    # news is handled in news.py
+    return TRUSTED_DOMAINS_GENERAL
 
 # Aspect Detection
 ASPECT_KEYWORDS = {

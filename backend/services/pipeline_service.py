@@ -8,6 +8,7 @@ from backend.services.detector_subjects import *
 from backend.services.extractor_data import extract_attributes, extract_tables, parse_table_numeric
 from backend.services.utils import deduplicate_attributes
 from backend.services.mapper_aspect_sentiment import analyze_aspect_sentiment
+from backend.domains.opinion_aspects import map_to_canonical_aspect
 
 
 def is_valid_opinion(text, aspect, score):
@@ -22,15 +23,49 @@ def is_valid_opinion(text, aspect, score):
     # Tangible terms / direct aspect match
     TANGIBLE_TERMS = ["feel", "build", "performance", "speed", "camera", "battery",
                       "display", "screen", "price", "value", "design", "quality",
-                      "software", "smooth", "fast", "slow", "hot", "heat", "lag"]
+                      "software", "smooth", "fast", "slow", "hot", "heat", "lag",
+                      "charging", "speakers", "audio", "storage", "graphics"]
     is_tangible = any(t in text_lower for t in TANGIBLE_TERMS)
-    is_overall = any(k in text_lower for k in ["phone", "device", "overall", "recommend", "worth"])
+    is_overall = any(k in text_lower for k in ["phone", "device", "overall", "recommend", "worth", "buy"])
 
     # Direct aspect phrase: e.g. "great camera", "poor battery" — allow short if clear sentiment word
     SENTIMENT_WORDS = ["great", "excellent", "good", "bad", "terrible", "poor", "amazing",
                        "love", "hate", "worst", "best", "awful", "incredible", "disappointing",
-                       "impressive", "mediocre", "solid", "decent", "weak", "strong"]
-    is_direct_aspect = is_tangible and any(s in text_lower for s in SENTIMENT_WORDS)
+                       "impressive", "mediocre", "solid", "decent", "weak", "strong",
+                       "better", "worse", "superior", "inferior", "ideal", "perfect"]
+    is_direct_aspect = (is_tangible or is_overall) and any(s in text_lower for s in SENTIMENT_WORDS)
+
+    # ---- COMPARISON / CONTEXT-LESS HEURISTICS ----
+    # 1. Pure comparison without evaluation: "Like with the X from before"
+    COMPARISON_STARTERS = ["like with", "similar to", "as with", "just like", "same as",
+                            "compared to", "compared with", "unlike"]
+    if any(text_lower.startswith(c) for c in COMPARISON_STARTERS) and len(words) < 12:
+        return False  # Comparison fragment, no evaluation
+
+    # 2. Prepositional phrases / context anchors with no main clause
+    CONTEXT_ANCHORS = ["in low light", "at night", "in the dark", "in bright", "in direct",
+                        "in natural setting", "on paper", "in practice", "in the natural",
+                        "in terms of", "when it comes to", "as a result"]
+    if any(text_lower.strip() == c or text_lower.strip().startswith(c + ",") for c in CONTEXT_ANCHORS):
+        return False  # Context anchor with no claim following
+
+    # 3. Past-tense references to previous versions ("reached its peak in OxygenOS 11" -> negative)
+    # We allow these but don't filter — the sentiment score handles it
+
+    # 4. Unrelated personal statements ("I was an established critic")
+    SELF_REFERENCE_ONLY = ["i was", "i am", "i have been", "i used to", "i remember", "i think i"]
+    if any(text_lower.startswith(sr) for sr in SELF_REFERENCE_ONLY) and not (is_tangible or is_overall):
+        return False  # Personal narrative with no product relevance
+
+    # 5. Purely factual comparison without adjective ("Looks a lot like the OnePlus 8T")
+    FACTUAL_STARTERS = ["looks a lot like", "looks like", "looks similar", "looks the same",
+                         "identical to", "same design as", "same hardware as"]
+    if any(text_lower.startswith(f) for f in FACTUAL_STARTERS):
+        return False  # Factual visual comparison
+
+    # 6. Image credit / media attribution noise
+    if "image credit" in text_lower or "photo credit" in text_lower or "credit:" in text_lower:
+        return False
 
     # Fragment checks
     if text_str and text_str[0].islower() and not is_direct_aspect:
@@ -52,6 +87,7 @@ def is_valid_opinion(text, aspect, score):
         return False
 
     return True
+
 
 def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False):
     query = parsed.get("original", "")
@@ -184,6 +220,9 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                 for sa in sentiment_aspects:
                     raw_text = sa["text"].strip().lower()
 
+                    if not is_valid_opinion(sa["text"], sa["aspect"], sa["score"]):
+                        continue
+
                     text_key = (subject, raw_text)
                     if text_key in seen_subjective_texts:
                         continue
@@ -202,9 +241,12 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
 
                     seen_global.add(key)
 
+                    # Map to canonical aspect
+                    canonical_aspect = map_to_canonical_aspect(sa["aspect"]) or sa["aspect"]
+
                     results.append({
                         "entity": subject,
-                        "aspect": sa["aspect"],
+                        "aspect": canonical_aspect,
                         "sentiment": sa["sentiment"],
                         "score": sa["score"],
                         "text": sa["text"],
@@ -235,9 +277,11 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                         continue
                     seen_subjective_texts.add(text_key)
 
+                    canonical_aspect = map_to_canonical_aspect(sa["aspect"]) or sa["aspect"]
+
                     results.append({
                         "entity": subject,
-                        "aspect": sa["aspect"],
+                        "aspect": canonical_aspect,
                         "sentiment": sa["sentiment"],
                         "score": sa["score"],
                         "text": sa["text"],

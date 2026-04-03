@@ -1,15 +1,11 @@
-import requests
 from bs4 import BeautifulSoup
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                  "AppleWebKit/537.36 (KHTML, like Gecko) "
-                  "Chrome/120.0.0.0 Safari/537.36"
-}
+from backend.services.http_client import get as http_get
 
 def extract(url: str):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = http_get(url, referer="https://www.google.com/search?q=gsmarena")
+        if not response:
+            return None
         soup = BeautifulSoup(response.content, "html.parser")
         
         extracted_tables = []

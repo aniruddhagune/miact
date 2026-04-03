@@ -3,7 +3,9 @@ from fastapi.responses import StreamingResponse
 import json
 from backend.services.search_service import fetch_search_results_async
 from backend.services.query_parser import parse_query
-from backend.domains.tech import TRUSTED_DOMAINS 
+from backend.domains.tech import get_trusted_domains as get_tech_domains
+from backend.domains.news import get_trusted_domains as get_news_domains
+from backend.domains.domain_signals import infer_query_type
 
 from backend.services.db_query_service import fetch_from_db
 from backend.services.pipeline_service import process_query_url
@@ -70,16 +72,26 @@ async def search(query: str, t: str = None):
         results = {}
         urls_dict = {}
 
-        if parsed["mode"] == "news":
-            news_results = await fetch_search_results_async(query)
+        # ---- CLASSIFY QUERY TYPE for trusted domain selection ----
+        entities = parsed.get("entities", [])
+        filter_data = parsed.get("filter")
+        query_type = infer_query_type(query, entities=entities)
+        parsed["query_type"] = query_type
+
+        if parsed["mode"] == "news" or query_type.startswith("news"):
+            news_domains = get_news_domains(query_type)
+            news_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains)
             urls_dict["news"] = {"query": query, "urls": [r["url"] for r in news_results]}
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
             results["news"] = news_results
             yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
             return
 
-        entities = parsed.get("entities", [])
-        filter_data = parsed.get("filter")
+        # Select fact cascade domains based on inferred type
+        if query_type == "tech_laptop":
+            fact_cascade_domains = ["notebookcheck.net", "wikipedia.org", "rtings.com"]
+        else:  # tech_phone or general
+            fact_cascade_domains = ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]
 
         if entities:
             for entity in entities:
@@ -90,9 +102,9 @@ async def search(query: str, t: str = None):
                 # so the pipeline behaves the same as single-entity mode
                 entity_parsed = {**parsed, "entities": [entity], "original": entity}
                 
-                # --- SYNCHRONOUS FACT CASCADE ---
+                # --- SYNCHRONOUS FACT CASCADE (per-type domains) ---
                 has_enough_facts = False
-                for domain in ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]:
+                for domain in fact_cascade_domains:
                     if has_enough_facts:
                         break
                         
@@ -165,7 +177,8 @@ async def search(query: str, t: str = None):
                 search_query += str(filter_data["value"]) + " "
 
             search_query = search_query.strip()
-            search_results = await fetch_search_results_async(search_query, num_results=5, trusted_domains=TRUSTED_DOMAINS)
+            general_domains = get_tech_domains(query_type)
+            search_results = await fetch_search_results_async(search_query, num_results=5, trusted_domains=general_domains)
             urls_list = [r["url"] for r in search_results]
             urls_dict["global"] = {"query": search_query, "urls": urls_list}
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"

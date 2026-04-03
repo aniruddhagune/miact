@@ -40,6 +40,8 @@ function App() {
   // Sources Card
   const [showSourcesPopup, setShowSourcesPopup] = useState(false);
   const [activeSourceTab, setActiveSourceTab] = useState(null);
+  const sourcesPopupRef = useRef(null);
+  const sourcesToggleRef = useRef(null);
 
   const containerRef = useRef(null);
 
@@ -84,6 +86,23 @@ function App() {
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
+
+  // Close sources popup on click-outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        showSourcesPopup &&
+        sourcesPopupRef.current &&
+        !sourcesPopupRef.current.contains(e.target) &&
+        sourcesToggleRef.current &&
+        !sourcesToggleRef.current.contains(e.target)
+      ) {
+        setShowSourcesPopup(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSourcesPopup]);
 
   const handleToggleSidebar = () => {
      if (!sidebarOpen) {
@@ -205,19 +224,43 @@ function App() {
 
   const formatSpecValue = (val) => {
     if (!val) return null;
-    // Split main value from parenthetical detail — render inline, not block
-    const match = val.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
-    if (match) {
-        const major = match[1].trim();
-        const minor = match[2] ? `(${match[2]})` : null;
-        return (
-            <span>
-                <span className="text-major">{major}</span>
-                {minor && <span className="text-minor">{minor}</span>}
-            </span>
-        );
+    const strVal = String(val);
+    // Protect thousands-separator commas: "32,999" should NOT split
+    // Only split on commas that are list separators (followed by a space or after non-digit)
+    const splitSafe = strVal.split(/(?<=\D),\s*|,\s+(?=\D)/);
+    const parts = splitSafe.length > 1 ? splitSafe : [strVal];
+    if (parts.length === 1) {
+        // Single value — split major/minor on parenthetical
+        const match = strVal.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
+        if (match) {
+            const major = match[1].trim();
+            const minor = match[2] ? `(${match[2]})` : null;
+            return (
+                <span>
+                    <span className="text-major">{major}</span>
+                    {minor && <span className="text-minor"> {minor}</span>}
+                </span>
+            );
+        }
+        return <span className="text-major">{strVal}</span>;
     }
-    return <span className="text-major">{val}</span>;
+    // Multiple parts — render as stacked
+    return (
+        <span className="flex flex-col gap-0.5">
+            {parts.map((p, i) => {
+                const m = p.trim().match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
+                if (m) {
+                    return (
+                        <span key={i}>
+                            <span className="text-major">{m[1].trim()}</span>
+                            {m[2] && <span className="text-minor"> ({m[2]})</span>}
+                        </span>
+                    );
+                }
+                return <span key={i} className="text-major">{p.trim()}</span>;
+            })}
+        </span>
+    );
   };
 
   // Detect aspects that should use '/' inline joining (bands, freq-style, simple lists)
@@ -368,79 +411,139 @@ function App() {
                             })}
                          </tr>
                       ))}
-                      
-                      {/* Opinions Divider */}
-                      {allSubjective.length > 0 && (
-                         <>
-                            <tr>
-                               <td colSpan={entities.length + 1} className="pt-10 pb-6 border-none text-center">
-                                  <h4 className="text-[28px] font-oswald text-slate-300 font-medium uppercase tracking-[0.2em] relative before:content-[''] before:absolute before:w-[60px] before:h-px before:bg-slate-600 before:right-full before:top-1/2 before:mr-4 after:content-[''] after:absolute after:w-[60px] after:h-px after:bg-slate-600 after:left-full after:top-1/2 after:ml-4 inline-block">OPINIONS</h4>
-                               </td>
-                            </tr>
-                            {/* Score Block row - full-width spanning */}
-                            <tr>
-                               <td colSpan={entities.length + 1} className="border-none pb-6 align-top">
-                                  {(() => {
-                                     // Only show scores for tangible, meaningful aspects
-                                     const MEANINGFUL_SCORE_ASPECTS = new Set([
-                                        "camera", "cameras", "battery", "display", "screen", "performance",
-                                        "build", "design", "software", "charging", "speakers", "audio",
-                                        "speed", "value", "price", "overall", "overall impression", "gaming",
-                                        "photography", "video", "multiple"
-                                     ]);
-                                     const allValidScores = entities.flatMap(en =>
-                                        scoreMap[en].filter(s => MEANINGFUL_SCORE_ASPECTS.has(s.aspect.toLowerCase()))
-                                     );
-                                     if (!allValidScores.length) return null;
-                                     return (
-                                        <div className="flex flex-wrap gap-2 justify-center">
-                                           {allValidScores.map(score => (
-                                              <div key={score.aspect} className="bg-slate-800/80 rounded-lg px-3 py-2 border border-white/10 flex items-center gap-2">
-                                                 <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">{score.aspect}:</span>
-                                                 <span className={`text-[15px] font-mono font-bold ${score.value >= 7 ? 'text-emerald-400' : score.value >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                    {score.value}/10
-                                                 </span>
-                                              </div>
-                                           ))}
-                                        </div>
-                                     );
-                                  })()}
-                               </td>
-                            </tr>
-                            {/* Opinion Cards - full-width, properly centered */}
-                            <tr>
-                               <td colSpan={entities.length + 1} className="border-none align-top pt-2 px-4">
-                                  {entities.map(en => (
-                                     <div key={en}>
-                                        {entities.length > 1 && (
-                                           <p className="text-center text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">{en}</p>
-                                        )}
-                                        <div className={`w-full grid ${entities.length === 1 ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1 md:grid-cols-2 gap-4'} place-items-center items-start`}>
-                                           {subjectiveMap[en].map((r, k) => {
-                                               const tier = getSentimentTier(r.score);
-                                               if (!tier) return null;
-                                               const isPos = r.score > 0;
-                                               const isUser = r.metadata?.user_review;
-                                               return (
-                                                  <div key={k} className={`w-full bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${isPos?'border-t-[3px] border-t-emerald-500':'border-t-[3px] border-t-red-500'}`}>
-                                                     <div className="w-full flex justify-between items-center mb-3">
-                                                        <div className="flex gap-2">
-                                                           <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-semibold capitalize text-slate-300 shadow-inner">{r.aspect}</span>
-                                                           {isUser && <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter self-center border border-blue-500/30">User</span>}
-                                                        </div>
-                                                        <span className={`text-[11px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${isPos?'bg-emerald-500/10 text-emerald-400':'bg-red-500/10 text-red-400'}`}>{tier}</span>
-                                                     </div>
-                                                     <p className="m-0 text-[14px] text-slate-300 italic leading-relaxed font-inter">"{r.text}"</p>
+                                          {/* Opinions Section - below table, separate layout */}
+                       {allSubjective.length > 0 && (
+                          <>
+                             <tr>
+                                <td colSpan={entities.length + 1} className="pt-10 pb-2 border-none text-center">
+                                   <h4 className="text-[28px] font-oswald text-slate-300 font-medium uppercase tracking-[0.2em] relative before:content-[''] before:absolute before:w-[60px] before:h-px before:bg-slate-600 before:right-full before:top-1/2 before:mr-4 after:content-[''] after:absolute after:w-[60px] after:h-px after:bg-slate-600 after:left-full after:top-1/2 after:ml-4 inline-block">OPINIONS</h4>
+                                </td>
+                             </tr>
+                             <tr>
+                                <td colSpan={entities.length + 1} className="border-none pt-2 pb-8 px-2">
+                                   {(() => {
+                                      // Collect all valid scores and group cards by canonical aspect
+                                      const MEANINGFUL_SCORE_ASPECTS = new Set([
+                                         "camera", "cameras", "battery", "display", "screen", "performance",
+                                         "build", "design", "software", "charging", "speakers", "audio",
+                                         "speed", "value", "price", "overall", "gaming",
+                                         "photography", "connectivity", "storage", "graphics"
+                                      ]);
+
+                                      // Build map: aspect -> { score, cards[] }
+                                      const aspectScoreMap = {};
+                                      entities.forEach(en => {
+                                         scoreMap[en].forEach(s => {
+                                            const asp = s.aspect.toLowerCase();
+                                            if (!MEANINGFUL_SCORE_ASPECTS.has(asp)) return;
+                                            if (!aspectScoreMap[asp]) aspectScoreMap[asp] = { value: s.value, cards: [] };
+                                            else aspectScoreMap[asp].value = Math.max(aspectScoreMap[asp].value, s.value);
+                                         });
+                                         subjectiveMap[en].forEach(r => {
+                                            const tier = getSentimentTier(r.score);
+                                            if (!tier) return;
+                                            const asp = r.aspect.toLowerCase();
+                                            const target = aspectScoreMap[asp];
+                                            if (target) target.cards.push({ ...r, entityLabel: en });
+                                         });
+                                      });
+
+                                      // Unmapped cards — show in "Other" if they seem to be about something
+                                      const mappedAspects = new Set(Object.keys(aspectScoreMap));
+                                      const NOISE_WORDS = new Set(["it", "this", "that", "there", "here", "they", "we", "he", "she"]);
+                                      const otherCards = entities.flatMap(en =>
+                                         subjectiveMap[en].filter(r => {
+                                            if (!getSentimentTier(r.score)) return false;
+                                            if (mappedAspects.has(r.aspect.toLowerCase())) return false;
+                                            // Only include if the text has at least one meaningful noun
+                                            const words = r.text.toLowerCase().split(/\s+/);
+                                            return words.some(w => w.length > 4 && !NOISE_WORDS.has(w));
+                                         }).map(r => ({ ...r, entityLabel: en }))
+                                      ).slice(0, 6);
+
+                                      const aspectRows = Object.entries(aspectScoreMap);
+
+                                      return (
+                                         <div className="flex flex-col gap-8">
+                                            {aspectRows.map(([asp, data]) => (
+                                               <div key={asp} className="flex gap-6 items-start">
+                                                  {/* LEFT: sub-heading + score */}
+                                                  <div className="shrink-0 w-28 flex flex-col items-center pt-2">
+                                                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center">{asp}</span>
+                                                     <span className={`text-[22px] font-mono font-black ${
+                                                        data.value >= 7 ? 'text-emerald-400' :
+                                                        data.value >= 4 ? 'text-yellow-400' : 'text-red-400'
+                                                     }`}>{data.value}<span className="text-sm text-slate-500 font-bold">/10</span></span>
                                                   </div>
-                                               );
-                                           })}
-                                        </div>
-                                     </div>
-                                  ))}
-                               </td>
-                            </tr>
-                         </>
-                      )}
+                                                  {/* RIGHT: horizontally scrollable cards */}
+                                                  <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
+                                                     <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+                                                        {data.cards.length === 0 ? (
+                                                           <div className="text-slate-500 italic text-sm flex items-center h-full px-2">No opinions found.</div>
+                                                        ) : data.cards.map((r, k) => {
+                                                           const tier = getSentimentTier(r.score);
+                                                           const isPos = r.score > 0;
+                                                           const isUser = r.metadata?.user_review;
+                                                           return (
+                                                              <div key={k} className={`w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
+                                                                 isPos ? 'border-t-[3px] border-t-emerald-500' : 'border-t-[3px] border-t-red-500'
+                                                              }`}>
+                                                                 <div className="flex justify-between items-center mb-2">
+                                                                    <div className="flex gap-2">
+                                                                       {entities.length > 1 && r.entityLabel && (
+                                                                          <span className="bg-slate-700/60 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight text-slate-400">{r.entityLabel.split(' ').slice(-1)[0]}</span>
+                                                                       )}
+                                                                       {isUser && <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter border border-blue-500/30">User</span>}
+                                                                    </div>
+                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                                                       isPos ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                                                    }`}>{tier}</span>
+                                                                 </div>
+                                                                 <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed font-inter">"{r.text}"</p>
+                                                              </div>
+                                                           );
+                                                        })}
+                                                     </div>
+                                                  </div>
+                                               </div>
+                                            ))}
+
+                                            {/* Other Opinions row */}
+                                            {otherCards.length > 0 && (
+                                               <div className="flex gap-6 items-start">
+                                                  <div className="shrink-0 w-28 flex flex-col items-center pt-2">
+                                                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center">Other</span>
+                                                  </div>
+                                                  <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
+                                                     <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+                                                        {otherCards.map((r, k) => {
+                                                           const tier = getSentimentTier(r.score);
+                                                           const isPos = r.score > 0;
+                                                           return (
+                                                              <div key={k} className={`w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
+                                                                 isPos ? 'border-t-[3px] border-t-emerald-500' : 'border-t-[3px] border-t-red-500'
+                                                              }`}>
+                                                                 <div className="flex justify-between items-center mb-2">
+                                                                    <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-semibold capitalize text-slate-300">{r.aspect}</span>
+                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                                                       isPos ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                                                    }`}>{tier}</span>
+                                                                 </div>
+                                                                 <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed font-inter">"{r.text}"</p>
+                                                              </div>
+                                                           );
+                                                        })}
+                                                     </div>
+                                                  </div>
+                                               </div>
+                                            )}
+                                         </div>
+                                      );
+                                   })()}
+                                </td>
+                             </tr>
+                          </>
+                       )}
                    </tbody>
                 </table>
             </div>
@@ -535,14 +638,18 @@ function App() {
 
         {/* Floating Top-Right ! Sources Toggle Button */}
         <button 
-           className={`absolute top-6 right-8 w-12 h-12 flex justify-center items-center bg-[#111] rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.5)] border border-[#222] transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] z-[999] hover:bg-[#222] ${!showSourcesPopup && queries[activeChat]?.urls && Object.keys(queries[activeChat].urls).length > 0 ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'}`}
+           ref={sourcesToggleRef}
+           className={`absolute top-6 right-8 w-12 h-12 flex justify-center items-center bg-[#111] rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.5)] border border-[#222] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[999] hover:bg-[#222] ${!showSourcesPopup && queries[activeChat]?.urls && Object.keys(queries[activeChat].urls).length > 0 ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'}`}
            onClick={() => setShowSourcesPopup(true)}
         >
            <span className="font-oswald text-gray-300 font-bold text-3xl -mt-[2px]">!</span>
         </button>
 
         {/* Floating Sources Card (Tab interface) */}
-        <div className={`absolute top-6 right-8 w-[420px] max-h-[80vh] z-[100] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5 p-5 rounded-3xl bg-black/80 backdrop-blur-3xl transition-all duration-500 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${showSourcesPopup && queries[activeChat]?.urls && activeSourceTab ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none origin-top-right'}`}>
+        <div
+           ref={sourcesPopupRef}
+           className={`absolute top-6 right-8 w-[420px] max-h-[80vh] z-[100] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/5 p-5 rounded-3xl bg-black/80 backdrop-blur-3xl transition-all duration-[350ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${showSourcesPopup && queries[activeChat]?.urls && activeSourceTab ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-90 -translate-y-3 pointer-events-none origin-top-right'}`}
+        >
             <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-2 relative">
                <h4 className="m-0 text-white font-oswald text-[28px] uppercase tracking-widest font-medium mx-auto">SOURCES</h4>
                <button onClick={() => setShowSourcesPopup(false)} className="absolute right-0 bg-transparent border-none text-slate-400 text-3xl hover:text-white cursor-pointer transition-colors leading-[0] outline-none mb-1">&times;</button>
