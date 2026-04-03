@@ -466,9 +466,9 @@ function App() {
                                       return (
                                          <div className="flex flex-col gap-8">
                                             {aspectRows.map(([asp, data]) => (
-                                               <div key={asp} className="flex gap-6 items-start">
+                                               <div key={asp} className="flex opinion-row">
                                                   {/* LEFT: sub-heading + score */}
-                                                  <div className="shrink-0 w-28 flex flex-col items-center pt-2">
+                                                  <div className="shrink-0 w-28 flex flex-col items-center opinion-heading">
                                                      <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center">{asp}</span>
                                                      <span className={`text-[22px] font-mono font-black ${
                                                         data.value >= 7 ? 'text-emerald-400' :
@@ -476,8 +476,8 @@ function App() {
                                                      }`}>{data.value}<span className="text-sm text-slate-500 font-bold">/10</span></span>
                                                   </div>
                                                   {/* RIGHT: horizontally scrollable cards */}
-                                                  <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
-                                                     <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+                                                  <div className="flex-1 overflow-x-auto custom-scrollbar opinion-scroll-shell">
+                                                     <div className="flex opinion-card-strip" style={{ minWidth: 'max-content' }}>
                                                         {data.cards.length === 0 ? (
                                                            <div className="text-slate-500 italic text-sm flex items-center h-full px-2">No opinions found.</div>
                                                         ) : data.cards.map((r, k) => {
@@ -485,7 +485,7 @@ function App() {
                                                            const isPos = r.score > 0;
                                                            const isUser = r.metadata?.user_review;
                                                            return (
-                                                              <div key={k} className={`w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
+                                                              <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
                                                                  isPos ? 'border-t-[3px] border-t-emerald-500' : 'border-t-[3px] border-t-red-500'
                                                               }`}>
                                                                  <div className="flex justify-between items-center mb-2">
@@ -510,17 +510,17 @@ function App() {
 
                                             {/* Other Opinions row */}
                                             {otherCards.length > 0 && (
-                                               <div className="flex gap-6 items-start">
-                                                  <div className="shrink-0 w-28 flex flex-col items-center pt-2">
+                                               <div className="flex opinion-row">
+                                                  <div className="shrink-0 w-28 flex flex-col items-center opinion-heading">
                                                      <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center">Other</span>
                                                   </div>
-                                                  <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
-                                                     <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
+                                                  <div className="flex-1 overflow-x-auto custom-scrollbar opinion-scroll-shell">
+                                                     <div className="flex opinion-card-strip" style={{ minWidth: 'max-content' }}>
                                                         {otherCards.map((r, k) => {
                                                            const tier = getSentimentTier(r.score);
                                                            const isPos = r.score > 0;
                                                            return (
-                                                              <div key={k} className={`w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
+                                                              <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-4 flex flex-col shadow-lg transition-transform duration-300 hover:-translate-y-1 ${
                                                                  isPos ? 'border-t-[3px] border-t-emerald-500' : 'border-t-[3px] border-t-red-500'
                                                               }`}>
                                                                  <div className="flex justify-between items-center mb-2">

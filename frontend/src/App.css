@@ -150,3 +150,30 @@
 .animate-welcome-out {
   animation: slideDownFadeOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+.opinion-row {
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.opinion-heading {
+  min-height: 13.5rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.opinion-scroll-shell {
+  padding-top: 0.5rem;
+  padding-bottom: 1.25rem;
+}
+
+.opinion-card-strip {
+  align-items: stretch;
+  gap: 1.25rem;
+  min-height: 13.5rem;
+}
+
+.opinion-card {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
