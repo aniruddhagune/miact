@@ -11,7 +11,35 @@ def is_valid_match(query: str, title: str):
     for mod in modifiers:
         if mod not in entity_lower and re.search(rf"\b{mod}\b", title_lower):
             return False
-    return True
+def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tuple[bool, int, str, list[str]]:
+    """
+    Score a search result match for relevance using the new spaCy engine.
+    Returns (is_valid, score, category, trace).
+    """
+    from backend.nlp.relevance_engine import calculate_relevance_score
+    from backend.domains.tech import TRUSTED_DOMAINS_PHONE
+
+    relevance_01, category, trace = calculate_relevance_score(query, title, url)
+    
+    # Convert 0.0-1.0 score to 0-20 scale for search sorting
+    score = int(relevance_01 * 20)
+    
+    # 1. Filter Threshold
+    if relevance_01 < 0.35:
+        # Check snippet as fallback overlap
+        snippet_keywords = set(re.sub(r'[^a-z0-9 ]', '', snippet.lower()).split())
+        query_keywords = set(re.sub(r'[^a-z0-9 ]', '', query.lower()).split())
+        if not (query_keywords & snippet_keywords):
+            trace.append("Filter Triggered: Score < 0.35 and no snippet overlap.")
+            return False, 0, category, trace
+
+    # 2. Domain Trust Bonus
+    u_norm = url.split("/")[2] if "://" in url else url
+    if any(d in u_norm for d in TRUSTED_DOMAINS_PHONE):
+        score += 5
+        trace.append("Bonus +5: Trusted Tech Domain.")
+        
+    return True, score, category, trace
 
 def _do_ddg_sync(query: str, num_results: int):
     results = []
@@ -21,12 +49,18 @@ def _do_ddg_sync(query: str, num_results: int):
             print(f"[DEBUG] Raw search results for '{query}': {len(raw_results)}")
             for r in raw_results:
                 title = r.get("title", "")
-                if is_valid_match(query, title):
+                url = r.get("href", "")
+                snippet = r.get("body", "")
+                is_valid, score, category, trace = score_match(query, title, url, snippet)
+                if is_valid:
                     results.append({
                         "title": title,
-                        "url": r.get("href"),
-                        "snippet": r.get("body"),
-                        "source": r.get("href").split("/")[2] if "://" in r.get("href") else ""
+                        "url": url,
+                        "snippet": snippet,
+                        "source": url.split("/")[2] if "://" in url else "",
+                        "score": score,
+                        "category": category,
+                        "trace": trace
                     })
                 else:
                     print(f"[DEBUG] Filtered out title: {title}")

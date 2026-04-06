@@ -94,8 +94,17 @@ CATEGORY_TERMS = [
 ]
 
 DESCRIPTOR_TERMS = [
-    "max", "pro", "plus", "ultra", "series"
+    "max", "pro", "plus", "ultra", "series", "mini", "se", "lite", "fe", "compact", "standard"
 ]
+
+# URL Categorization Keywords
+URL_TYPE_KEYWORDS = {
+    "specs": ["specs", "specification", "specifications", "features", "full-specifications"],
+    "review": ["review", "hands-on", "rating", "assessment", "analysis"],
+    "comparison": ["vs", "compare", "comparison", "versus", "or"],
+    "news": ["news", "article", "story", "updates", "flash"],
+    "rumored": ["rumor", "rumoured", "leak", "leaked", "upcoming", "concept"]
+}
 
 # Numeric Extraction
 
