@@ -1,12 +1,17 @@
 import re
 from backend.extractors.extractor_aspect import extract_aspects
 from backend.nlp.objectivity_classifier import classify_sentence
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from backend.nlp.grammar_structural import classify_clause
 from backend.nlp.sentiment_lexicon import POSITIVE_WORDS, NEGATIVE_WORDS
 from backend.config.variables import DEBUG
 
-analyzer = SentimentIntensityAnalyzer()
+try:
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    analyzer = SentimentIntensityAnalyzer()
+except ImportError:
+    analyzer = None
+    if DEBUG:
+        print("[mapper] WARNING: vaderSentiment not found. Falling back to structural-only scoring.")
 
 
 def split_sentence(sentence: str):
@@ -60,8 +65,13 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
             sentiment = "neutral"
 
         unique_aspects = set(aspects)
-        vader_score = analyzer.polarity_scores(part)["compound"]
-        score = grammar["score"] if grammar["sentiment"] != "neutral" else vader_score
+        
+        # VADER Fallback
+        vader_score = 0.0
+        if analyzer:
+            vader_score = analyzer.polarity_scores(part)["compound"]
+        
+        score = grammar["score"] if (grammar["sentiment"] != "neutral" or not analyzer) else vader_score
 
         if not unique_aspects and abs(score) >= 0.25:
             unique_aspects.add("overall impression")

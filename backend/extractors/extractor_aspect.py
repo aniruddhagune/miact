@@ -4,7 +4,7 @@ import re
 
 def extract_aspects(sentence: str, domain: str = "generic"):
     # ---- load domain-specific config ----
-    if domain == "tech":
+    if domain.startswith("tech"):
         from backend.domains.tech import (
             ASPECT_KEYWORDS,
             ASPECT_MAPPING,

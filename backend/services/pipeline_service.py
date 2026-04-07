@@ -1,89 +1,41 @@
-import re
-from backend.services.preprocessing import *
+from backend.extractors.utils import clean_text, split_into_sentences
 
-from backend.services.extractor_content import extract_content
+from backend.extractors.extractor_content import extract_content
 from backend.services.mapper_domain import detect_domain
-from backend.services.detector_subjects import *
+from backend.extractors.detector_subjects import extract_subjects, build_subject_aliases, detect_subjects, is_shared_context, split_comparison
 
-from backend.services.extractor_data import extract_attributes, extract_tables, parse_table_numeric
+from backend.extractors.extractor_data import extract_attributes, extract_tables, parse_table_numeric
 from backend.services.utils import deduplicate_attributes
-from backend.services.mapper_aspect_sentiment import analyze_aspect_sentiment
 from backend.domains.opinion_aspects import map_to_canonical_aspect
 
+# Modern NLP Imports
+from backend.nlp.grammar_structural import classify_clause
+from backend.nlp.mapper_aspect_sentiment import analyze_aspect_sentiment # Ensure this uses structural too
 
-def is_valid_opinion(text, aspect, score):
+
+def is_valid_opinion(text, aspect, score, structural_info=None):
+    # If structural analysis (spaCy) found it's incomplete or a question, skip.
+    if structural_info:
+        if structural_info.get("completeness") == "incomplete":
+            return False
+        if structural_info.get("is_question"):
+            return False
+
     # Discard exactly-zero scores (neutral)
     if score is None or score == 0:
         return False
 
-    text_str = text.strip()
-    text_lower = text_str.lower()
-    words = text_str.split()
-
-    # Tangible terms / direct aspect match
+    # Tangible check for quality signal
+    text_lower = text.lower()
     TANGIBLE_TERMS = ["feel", "build", "performance", "speed", "camera", "battery",
                       "display", "screen", "price", "value", "design", "quality",
                       "software", "smooth", "fast", "slow", "hot", "heat", "lag",
                       "charging", "speakers", "audio", "storage", "graphics"]
-    is_tangible = any(t in text_lower for t in TANGIBLE_TERMS)
-    is_overall = any(k in text_lower for k in ["phone", "device", "overall", "recommend", "worth", "buy"])
-
-    # Direct aspect phrase: e.g. "great camera", "poor battery" — allow short if clear sentiment word
-    SENTIMENT_WORDS = ["great", "excellent", "good", "bad", "terrible", "poor", "amazing",
-                       "love", "hate", "worst", "best", "awful", "incredible", "disappointing",
-                       "impressive", "mediocre", "solid", "decent", "weak", "strong",
-                       "better", "worse", "superior", "inferior", "ideal", "perfect"]
-    is_direct_aspect = (is_tangible or is_overall) and any(s in text_lower for s in SENTIMENT_WORDS)
-
-    # ---- COMPARISON / CONTEXT-LESS HEURISTICS ----
-    # 1. Pure comparison without evaluation: "Like with the X from before"
-    COMPARISON_STARTERS = ["like with", "similar to", "as with", "just like", "same as",
-                            "compared to", "compared with", "unlike"]
-    if any(text_lower.startswith(c) for c in COMPARISON_STARTERS) and len(words) < 12:
-        return False  # Comparison fragment, no evaluation
-
-    # 2. Prepositional phrases / context anchors with no main clause
-    CONTEXT_ANCHORS = ["in low light", "at night", "in the dark", "in bright", "in direct",
-                        "in natural setting", "on paper", "in practice", "in the natural",
-                        "in terms of", "when it comes to", "as a result"]
-    if any(text_lower.strip() == c or text_lower.strip().startswith(c + ",") for c in CONTEXT_ANCHORS):
-        return False  # Context anchor with no claim following
-
-    # 3. Past-tense references to previous versions ("reached its peak in OxygenOS 11" -> negative)
-    # We allow these but don't filter — the sentiment score handles it
-
-    # 4. Unrelated personal statements ("I was an established critic")
-    SELF_REFERENCE_ONLY = ["i was", "i am", "i have been", "i used to", "i remember", "i think i"]
-    if any(text_lower.startswith(sr) for sr in SELF_REFERENCE_ONLY) and not (is_tangible or is_overall):
-        return False  # Personal narrative with no product relevance
-
-    # 5. Purely factual comparison without adjective ("Looks a lot like the OnePlus 8T")
-    FACTUAL_STARTERS = ["looks a lot like", "looks like", "looks similar", "looks the same",
-                         "identical to", "same design as", "same hardware as"]
-    if any(text_lower.startswith(f) for f in FACTUAL_STARTERS):
-        return False  # Factual visual comparison
-
-    # 6. Image credit / media attribution noise
-    if "image credit" in text_lower or "photo credit" in text_lower or "credit:" in text_lower:
-        return False
-
-    # Fragment checks
-    if text_str and text_str[0].islower() and not is_direct_aspect:
-        return False  # Likely a mid-sentence fragment
-    if text_str and text_str[-1] in (',', ':', '-', '–'):
-        return False  # Trailing incomplete punctuation
-
-    # Minimum length — short only allowed for direct aspect matches
-    if len(words) < 7 and not is_direct_aspect:
-        return False
-
-    # Reject high digit ratio — likely a technical spec, not an opinion
-    digit_words = sum(1 for w in words if re.match(r'^\d+[\d.,x%GBMHzms]*$', w))
-    if len(words) > 0 and digit_words / len(words) > 0.3:
-        return False
-
-    # Require some word variety
-    if len(set(w.lower() for w in words)) < 3:
+    
+    # Tangible check for quality signal - e.g., "Camera is great" (3 words)
+    # General check - e.g., "I really like it" (4 words, fails) -> 6 words
+    WORDS_MINIMUM = 3 if any(t in text_lower for t in TANGIBLE_TERMS) else 6
+    if len(text.split()) < WORDS_MINIMUM:
         return False
 
     return True
@@ -149,7 +101,7 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
         return None
 
     # ---- OPINION RESTRICTOR ----
-    is_review = any(x in url.lower() for x in ["review", "opinion", "hands-on", "verdict"]) or domain in ["gsmarena", "theverge", "engadget", "tomsguide", "zdnet", "techradar"]
+    is_review = any(x in url.lower() for x in ["review", "opinion", "hands-on", "verdict", "test", "depth"]) or domain in ["gsmarena", "theverge", "engadget", "tomsguide", "zdnet", "techradar", "tech", "gadget", "notebookcheck"]
 
     cleaned = clean_text(data["text"])
     sentences = split_into_sentences(cleaned)
@@ -173,7 +125,11 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                 matched_subjects = subjects
 
             if not matched_subjects:
-                continue
+                # ---- FALLBACK: if single subject query, assume main subject for all snippets ----
+                if len(subjects) == 1:
+                    matched_subjects = subjects
+                else:
+                    continue
 
             attributes = []
             if not only_subjective:
@@ -220,7 +176,10 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                 for sa in sentiment_aspects:
                     raw_text = sa["text"].strip().lower()
 
-                    if not is_valid_opinion(sa["text"], sa["aspect"], sa["score"]):
+                    # Modern: Use Structural Classifier
+                    structural = classify_clause(sa["text"])
+
+                    if not is_valid_opinion(sa["text"], sa["aspect"], sa["score"], structural):
                         continue
 
                     text_key = (subject, raw_text)
@@ -229,26 +188,17 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                     
                     seen_subjective_texts.add(text_key)
 
-                    key = (
-                        subject,
-                        sa["aspect"],
-                        "subjective",
-                        sa["sentiment"]
-                    )
-
-                    if key in seen_global:
-                        continue
-
-                    seen_global.add(key)
-
-                    # Map to canonical aspect
-                    canonical_aspect = map_to_canonical_aspect(sa["aspect"]) or sa["aspect"]
+                    # Update score with structural score if it's more nuanced
+                    final_score = sa["score"]
+                    if structural.get("score") is not None:
+                        # Blend if sa["score"] was generic
+                        final_score = structural["score"]
 
                     results.append({
                         "entity": subject,
-                        "aspect": canonical_aspect,
+                        "aspect": map_to_canonical_aspect(sa["aspect"]) or sa["aspect"],
                         "sentiment": sa["sentiment"],
-                        "score": sa["score"],
+                        "score": final_score,
                         "text": sa["text"],
                         "type": "subjective",
                         "source": url

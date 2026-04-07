@@ -168,3 +168,10 @@ def is_shared_context(sentence: str):
     ]
 
     return any(k in sentence for k in shared_keywords)
+
+def split_comparison(sentence: str):
+    return re.split(
+        r"\bwhile\b|\bwhereas\b|\bbut\b|\bhowever\b",
+        sentence,
+        flags=re.IGNORECASE
+    )

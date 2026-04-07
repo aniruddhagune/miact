@@ -1,7 +1,7 @@
 venv/
+context/
 *__pycache__*
 *.old
 *.pyc
 *.zip
 *.txt
-context/

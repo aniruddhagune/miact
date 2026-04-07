@@ -1,6 +1,5 @@
 import re
 
-
 def clean_text(text: str):
     # remove references like [1], [23], especially from wikipedia
     text = re.sub(r'\[\d+\]', '', text)
@@ -26,10 +25,3 @@ def split_into_sentences(text: str):
             final_sentences.append(s)
 
     return [s.strip() for s in final_sentences if s.strip()]
-
-def split_comparison(sentence: str):
-    return re.split(
-        r"\bwhile\b|\bwhereas\b|\bbut\b|\bhowever\b",
-        sentence,
-        flags=re.IGNORECASE
-    )
