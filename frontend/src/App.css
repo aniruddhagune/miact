@@ -178,6 +178,39 @@
   margin-left: 4px;
 }
 
+.opinion-card.professional {
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-top: 3px solid #ffd700;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%);
+    box-shadow: 0 10px 30px -10px rgba(255, 215, 0, 0.15), 0 0 20px -5px rgba(255, 215, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.opinion-card.professional::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 45%, rgba(255, 215, 0, 0.05) 50%, transparent 55%);
+    animation: shine 6s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-30%) translateY(-30%); }
+    100% { transform: translateX(30%) translateY(30%); }
+}
+
+.spec-category-header td {
+    padding-top: 1.5rem !important;
+    padding-bottom: 0.75rem !important;
+    background: linear-gradient(to right, rgba(255,255,255,0.05), transparent) !important;
+    letter-spacing: 0.15em;
+    font-weight: 800;
+}
+
 ::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;

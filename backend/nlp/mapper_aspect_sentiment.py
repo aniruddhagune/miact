@@ -105,3 +105,14 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
         prev_grammar = {**grammar, "aspect": aspect}
 
     return results
+
+def analyze_sentiment_vader(text: str) -> float:
+    """
+    Returns the compound VADER score for a piece of text.
+    Used as fallback for 'Overall Impression' when aspect-based analysis is empty.
+    """
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    analyzer = SentimentIntensityAnalyzer()
+    vs = analyzer.polarity_scores(text)
+    return vs['compound']
+

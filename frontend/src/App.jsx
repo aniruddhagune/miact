@@ -224,15 +224,16 @@ function App() {
       }
    }, [queries]);
 
-   const getSentimentTier = (score) => {
-      if (score === null || score === undefined || score === 0) return null;
+    const getSentimentTier = (score) => {
+      if (score === null || score === undefined) return null;
       const s = Math.abs(score);
-      const polarity = score > 0 ? "Positive" : "Negative";
+      const polarity = score >= 0 ? "Positive" : "Negative";
+      // Inclusive threshold for user concerns
       if (s <= 0.25) return `Slightly ${polarity}`;
       if (s <= 0.50) return `Moderately ${polarity}`;
       if (s <= 0.75) return `Extremely ${polarity}`;
       return `Overwhelmingly ${polarity}`;
-   };
+    };
 
    const formatUrlText = (urlStr) => {
       try {
@@ -251,46 +252,50 @@ function App() {
       }
    };
 
-   const formatSpecValue = (val) => {
+    const formatSpecValue = (val) => {
       if (!val) return null;
       const strVal = String(val);
-      // Protect thousands-separator commas: "32,999" should NOT split
-      // Only split on commas that are list separators (followed by a space or after non-digit)
+      
+      // Automatic URL detection for fields like "Website"
+      if (strVal.startsWith('http')) {
+        return (
+          <a href={strVal} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline break-all">
+            {strVal.replace(/^https?:\/\//, '')}
+          </a>
+        );
+      }
+
       const splitSafe = strVal.split(/(?<=\D),\s*|,\s+(?=\D)/);
       const parts = splitSafe.length > 1 ? splitSafe : [strVal];
       if (parts.length === 1) {
-         // Single value — split major/minor on parenthetical
-         const match = strVal.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
-         if (match) {
-            const major = match[1].trim();
-            const minor = match[2] ? `(${match[2]})` : null;
-            return (
-               <span>
-                  <span className="text-major">{major}</span>
-                  {minor && <span className="text-minor"> {minor}</span>}
-               </span>
-            );
-         }
-         return <span className="text-major">{strVal}</span>;
+        const match = strVal.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
+        if (match) {
+          return (
+            <span>
+              <span className="text-major">{match[1].trim()}</span>
+              {match[2] && <span className="text-minor"> ({match[2]})</span>}
+            </span>
+          );
+        }
+        return <span className="text-major">{strVal}</span>;
       }
-      // Multiple parts — render as stacked
       return (
-         <span className="flex flex-col gap-0.5">
-            {parts.map((p, i) => {
-               const m = p.trim().match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
-               if (m) {
-                  return (
-                     <span key={i}>
-                        <span className="text-major">{m[1].trim()}</span>
-                        {m[2] && <span className="text-minor"> ({m[2]})</span>}
-                     </span>
-                  );
-               }
-               return <span key={i} className="text-major">{p.trim()}</span>;
-            })}
-         </span>
+        <span className="flex flex-col gap-0.5">
+          {parts.map((p, i) => {
+            const m = p.trim().match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
+            if (m) {
+              return (
+                <span key={i}>
+                  <span className="text-major">{m[1].trim()}</span>
+                  {m[2] && <span className="text-minor"> ({m[2]})</span>}
+                </span>
+              );
+            }
+            return <span key={i} className="text-major">{p.trim()}</span>;
+          })}
+        </span>
       );
-   };
+    };
 
    // Detect aspects that should use '/' inline joining (bands, freq-style, simple lists)
    const isBandAspect = (asp) => /bands?|frequency|freq|lte|gsm|wcdma|hspa|nr|5g|4g|3g|2g/i.test(asp);
@@ -366,22 +371,22 @@ function App() {
       return (
          <div className="w-full animate-fade-in-up">
             <div className="glass-panel w-full max-w-5xl mx-auto transition-all duration-500 relative pb-12 overflow-hidden">
-                           {/* Unified Pill Toggle Button */}
+               {/* Unified Pill Toggle Button */}
                <div className="flex justify-center mb-10">
                   <div className="pill-container">
-                     <div 
-                        className="pill-indicator" 
-                        style={{ 
-                           transform: `translateX(${currentTab === 'facts' ? '0' : '100%'})` 
+                     <div
+                        className="pill-indicator"
+                        style={{
+                           transform: `translateX(${currentTab === 'facts' ? '0' : '100%'})`
                         }}
                      />
-                     <button 
+                     <button
                         onClick={() => toggleTab(queries.indexOf(q), 'facts')}
                         className={`pill-button ${currentTab === 'facts' ? 'active' : 'inactive'}`}
                      >
                         Facts
                      </button>
-                     <button 
+                     <button
                         onClick={() => toggleTab(queries.indexOf(q), 'opinions')}
                         className={`pill-button ${currentTab === 'opinions' ? 'active' : 'inactive'}`}
                      >
@@ -398,63 +403,104 @@ function App() {
                            <table className="w-full text-left border-collapse font-inter">
                               <thead>
                                  <tr>
-                                    <th className="bg-slate-700/50 p-3 text-slate-300 text-sm font-bold uppercase tracking-wider rounded-tl-xl border-b border-white/5 w-[20%]">Aspect</th>
+                                    <th className="bg-slate-700/30 p-4 text-slate-300 text-sm font-oswald font-medium uppercase tracking-[0.2em] rounded-tl-xl border-b border-white/5 w-[20%]">Aspect</th>
                                     {entities.map((en, i) => (
-                                       <th key={en} className={`bg-slate-700/50 p-3 text-slate-300 text-sm font-bold uppercase tracking-wider border-b border-white/5 ${i === entities.length - 1 ? 'rounded-tr-xl' : ''}`}>
+                                       <th key={en} className={`bg-slate-700/30 p-4 text-slate-300 text-sm font-oswald font-medium uppercase tracking-[0.2em] border-b border-white/5 ${i === entities.length - 1 ? 'rounded-tr-xl' : ''}`}>
                                           {en}
                                        </th>
                                     ))}
                                  </tr>
                               </thead>
                               <tbody>
-                                 {aspectKeys.map((asp, i) => (
-                                    <tr key={i} className="hover:bg-white/5 transition-colors duration-200">
-                                       <td className="p-4 border-b border-white/5 capitalize font-semibold text-slate-300">{asp}</td>
-                                       {entities.map(en => {
-                                          const rec = aspectMap[asp][en];
-                                          return (
-                                             <td key={en} className="p-4 border-b border-white/5 font-mono text-emerald-400">
-                                                {rec ? (
-                                                   <div className="flex flex-col gap-1">
-                                                      {(() => {
-                                                         const raw = `${rec.value} ${rec.unit || ''}`.trim();
-                                                         const parts = raw.split(/(?:,\s*|\s*\+\s*)/).filter(Boolean).map(s => s.trim());
-                                                         
-                                                         // Grouping logic: Count > 5 AND majority are numeric
-                                                         const numericCount = parts.filter(p => !isNaN(parseFloat(p.replace(/[^0-9.]/g, '')))).length;
-                                                         const isMajorityNumeric = numericCount / parts.length > 0.5;
+                                 {(() => {
+                                    const rows = [];
+                                    const renderedAspects = new Set();
+                                    const TECH_GROUPS = {
+                                       "Dates": ["announced", "status", "released"],
+                                       "Core": ["os", "chipset", "cpu", "gpu", "platform"],
+                                       "Memory": ["card slot", "internal", "ram", "memory"],
+                                       "Connectivity": ["wlan", "bluetooth", "positioning", "nfc", "radio", "usb"],
+                                       "Display": ["type", "size", "resolution", "protection", "refresh rate", "screen"]
+                                    };
+                                    const groupOrder = ["Dates", "Core", "Memory", "Connectivity", "Display"];
 
-                                                         if (parts.length > 5 && isMajorityNumeric) {
-                                                            return (
-                                                               <span className="group relative leading-loose">
-                                                                  {formatSpecValue(parts.join(' / '))}
+                                    groupOrder.forEach(groupName => {
+                                       const groupKeys = TECH_GROUPS[groupName];
+                                       const matchingAspects = aspectKeys.filter(asp => groupKeys.includes(asp.toLowerCase()) && !renderedAspects.has(asp));
+                                       
+                                       if (matchingAspects.length > 0) {
+                                          rows.push(
+                                             <tr key={`header-${groupName}`} className="spec-category-header">
+                                                <td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-cyan-400/80 border-none">
+                                                   {groupName}
+                                                </td>
+                                             </tr>
+                                          );
+                                          matchingAspects.forEach(asp => {
+                                             renderedAspects.add(asp);
+                                             rows.push(
+                                                <tr key={asp} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group">
+                                                   <td className="py-4 pl-8 pr-6 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 w-1/4">{asp}</td>
+                                                   {entities.map(en => {
+                                                      const rec = aspectMap[asp][en];
+                                                      return (
+                                                         <td key={en} className="py-4 px-6 text-sm text-slate-200">
+                                                            {rec ? (
+                                                               <div className="flex items-center gap-2 group/cell">
+                                                                  {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
                                                                   {rec.source && (
-                                                                     <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-slate-500 hover:text-blue-400 inline-block align-middle">
-                                                                        <LinkIcon size={12} className="inline" />
+                                                                     <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
+                                                                        <LinkIcon size={12} />
                                                                      </a>
                                                                   )}
-                                                               </span>
-                                                            );
-                                                         }
+                                                               </div>
+                                                            ) : '-'}
+                                                         </td>
+                                                      );
+                                                   })}
+                                                </tr>
+                                             );
+                                          });
+                                       }
+                                    });
 
-                                                         return parts.map((item, idx) => (
-                                                            <div key={idx} className="block w-full group relative">
-                                                               {formatSpecValue(item)}
+                                    // Other
+                                    const otherAspects = aspectKeys.filter(asp => !renderedAspects.has(asp));
+                                    if (otherAspects.length > 0) {
+                                       rows.push(
+                                          <tr key="header-other" className="spec-category-header">
+                                             <td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-none">
+                                                Other
+                                             </td>
+                                          </tr>
+                                       );
+                                       otherAspects.forEach(asp => {
+                                          rows.push(
+                                             <tr key={asp} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group">
+                                                <td className="py-4 pl-8 pr-6 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 w-1/4">{asp}</td>
+                                                {entities.map(en => {
+                                                   const rec = aspectMap[asp][en];
+                                                   return (
+                                                      <td key={en} className="py-4 px-6 text-sm text-slate-200">
+                                                         {rec ? (
+                                                            <div className="flex items-center gap-2 group/cell">
+                                                               {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
                                                                {rec.source && (
-                                                                  <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-slate-500 hover:text-blue-400 inline-block align-middle">
-                                                                     <LinkIcon size={12} className="inline" />
+                                                                  <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
+                                                                     <LinkIcon size={12} />
                                                                   </a>
                                                                )}
                                                             </div>
-                                                         ));
-                                                      })()}
-                                                   </div>
-                                                ) : '-'}
-                                             </td>
+                                                         ) : '-'}
+                                                      </td>
+                                                   );
+                                                })}
+                                             </tr>
                                           );
-                                       })}
-                                    </tr>
-                                 ))}
+                                       });
+                                    }
+                                    return rows;
+                                 })()}
                               </tbody>
                            </table>
                         </div>
@@ -466,7 +512,7 @@ function App() {
                            const MEANINGFUL_SCORE_ASPECTS = new Set([
                               "camera", "cameras", "battery", "display", "screen", "performance",
                               "build", "design", "software", "charging", "speakers", "audio",
-                              "speed", "value", "price", "overall", "gaming", "photography"
+                              "speed", "value", "price", "overall", "gaming", "photography", "dates", "core", "connectivity"
                            ]);
 
                            const aspectScoreMap = {};
@@ -510,9 +556,10 @@ function App() {
                                           <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
                                              {data.cards.map((r, k) => {
                                                 const tier = getSentimentTier(r.score);
-                                                const isPos = r.score > 0;
+                                                const isPos = r.score >= 0;
+                                                const isPro = r.metadata?.is_professional;
                                                 return (
-                                                   <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${isPos ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500'}`}>
+                                                   <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${isPro ? 'professional' : (isPos ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500')}`}>
                                                       <div className="flex justify-between items-center mb-3">
                                                          <span className="bg-slate-700/60 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-slate-400">{r.entityLabel?.split(' ').pop()}</span>
                                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${isPos ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{tier}</span>
@@ -629,7 +676,7 @@ function App() {
                {/* Absolute Centered Welcome Banner */}
                <div className={`absolute left-0 right-0 top-[35%] flex justify-center pointer-events-none px-4 text-center ${queries.length === 0 ? 'animate-welcome-in' : 'animate-welcome-out'}`}>
                   <h1 className="text-5xl md:text-7xl xl:text-[6rem] font-oswald text-white uppercase tracking-[0.1em] drop-shadow-2xl">
-                     Welcome
+                     MIACT
                   </h1>
                </div>
 

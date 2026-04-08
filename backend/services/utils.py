@@ -49,3 +49,24 @@ def expand_variants(aspect, value):
         cleaned.append(p)
         
     return cleaned if cleaned else [value]
+
+def get_manual_urls(query: str) -> list[str]:
+    """
+    Extracts a list of absolute URLs from a string.
+    Supports comma-separated or space-separated inputs.
+    """
+    if not query:
+        return []
+    
+    # regex for http/https URLs that are followed by a delimiter or end of string
+    url_pattern = r"(https?://[^\s,]+)"
+    matches = re.findall(url_pattern, query, re.I)
+    
+    # Strip common trailing punctuation like commas or brackets that might be caught
+    urls = []
+    for m in matches:
+        u = m.strip(" ,()[]<>\"'").rstrip(".")
+        if u and u not in urls:
+            urls.append(u)
+            
+    return urls

@@ -13,10 +13,55 @@ from backend.services.entity_resolver_service import resolve_canonical_entities
 from backend.nlp.query_intent import analyze_query_intent
 
 async def execute_search(query: str, t: str = None):
+    from backend.services.utils import get_manual_urls
+    manual_urls = get_manual_urls(query)
     parsed = parse_query(query)
 
     async def event_generator():
         yield f"data: {json.dumps({'step': 'parsed', 'parsed': parsed})}\n\n"
+
+        # ---- MANUAL URL MODE ----
+        if manual_urls:
+            yield f"data: {json.dumps({'step': 'processing', 'message': f'Direct Scrape: {len(manual_urls)} URLs found...'})}\n\n"
+            results = {}
+            urls_dict = {}
+            
+            # Use query entities if available, else placeholder for inference
+            entities = parsed.get("entities", [])
+            inferred_entity = entities[0] if entities else None
+            
+            for url in manual_urls:
+                yield f"data: {json.dumps({'step': 'partial', 'entity': inferred_entity or 'Analyzing...', 'url': url})}\n\n"
+                try:
+                    import asyncio
+                    # Direct URLs get DUAL extraction (Both objective and subjective)
+                    pipeline_results = await asyncio.to_thread(process_query_url, parsed, url, only_objective=False, only_subjective=False)
+                except Exception as e:
+                    print(f"Error processing manual URL {url}: {e}")
+                    pipeline_results = None
+                
+                if pipeline_results:
+                    # If we don't have an entity name yet, try to infer it from the first result
+                    # or the page title (not available directly here, but pipeline results have 'entity' matched)
+                    found_entity = pipeline_results[0].get("entity") if pipeline_results else None
+                    target_ent = inferred_entity or found_entity or "Global"
+                    
+                    if target_ent not in results:
+                        results[target_ent] = []
+                        urls_dict[target_ent] = {"query": "Manual Input", "urls": []}
+                    
+                    results[target_ent].extend(pipeline_results)
+                    urls_dict[target_ent]["urls"].append(url)
+                    
+                    if not inferred_entity and found_entity:
+                        inferred_entity = found_entity
+            
+            yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
+            yield f"data: {json.dumps({'step': 'processing', 'message': 'Grouping results...'})}\n\n"
+            results = group_variants_and_persist(results)
+            yield f"data: {json.dumps({'step': 'result', 'source': 'direct', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
+            return
+
 
         # ---- CANONICAL ENTITY RESOLUTION ----
         yield f"data: {json.dumps({'step': 'processing', 'message': 'Resolving Entities...'})}\n\n"
