@@ -141,6 +141,35 @@ function App() {
       return () => observer.disconnect();
    }, [queries]);
 
+   const getEnhancedUrl = (url, text) => {
+      if (!url || !text) return url;
+      try {
+         const cleanText = text.replace(/["]/g, '').replace(/[\n\r]/g, ' ').trim();
+         const words = cleanText.split(/\s+/).filter(w => w.length > 0);
+         
+         let fragment = "";
+         if (words.length > 6) {
+            const start = words.slice(0, 3).join(' ');
+            const end = words.slice(-3).join(' ');
+            fragment = `text=${encodeURIComponent(start)},${encodeURIComponent(end)}`;
+         } else {
+            fragment = `text=${encodeURIComponent(cleanText.substring(0, 80))}`;
+         }
+
+         if (url.includes(':~:text=')) return url;
+         
+         // The spec uses :~: as the fragment directive delimiter
+         // If a hash already exists: URL#hash:~:text=...
+         // If no hash exists: URL#:~:text=...
+         if (url.includes('#')) {
+            return `${url}:~:${fragment}`;
+         }
+         return `${url}#:~:${fragment}`;
+      } catch {
+         return url;
+      }
+   };
+
    const sendQuery = async () => {
       if (!input.trim() || loading) return;
 
@@ -417,7 +446,7 @@ function App() {
                                     const renderedAspects = new Set();
                                     const TECH_GROUPS = {
                                        "Dates": ["announced", "status", "released"],
-                                       "Core": ["os", "chipset", "cpu", "gpu", "platform"],
+                                       "Core": ["os", "chipset", "cpu", "gpu", "platform", "system on chip"],
                                        "Memory": ["card slot", "internal", "ram", "memory"],
                                        "Connectivity": ["wlan", "bluetooth", "positioning", "nfc", "radio", "usb"],
                                        "Display": ["type", "size", "resolution", "protection", "refresh rate", "screen"]
@@ -449,7 +478,7 @@ function App() {
                                                                <div className="flex items-center gap-2 group/cell">
                                                                   {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
                                                                   {rec.source && (
-                                                                     <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
+                                                                     <a href={getEnhancedUrl(rec.source, `${asp} ${rec.value}`)} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
                                                                         <LinkIcon size={12} />
                                                                      </a>
                                                                   )}
@@ -486,7 +515,7 @@ function App() {
                                                             <div className="flex items-center gap-2 group/cell">
                                                                {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
                                                                {rec.source && (
-                                                                  <a href={rec.source} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
+                                                                  <a href={getEnhancedUrl(rec.source, `${asp} ${rec.value}`)} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
                                                                      <LinkIcon size={12} />
                                                                   </a>
                                                                )}
@@ -558,18 +587,23 @@ function App() {
                                                 const tier = getSentimentTier(r.score);
                                                 const isPos = r.score >= 0;
                                                 const isPro = r.metadata?.is_professional;
+                                                const sentimentClass = isPos ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500';
                                                 return (
-                                                   <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${isPro ? 'professional' : (isPos ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500')}`}>
+                                                   <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${sentimentClass} ${isPro ? 'professional' : ''}`}>
                                                       <div className="flex justify-between items-center mb-3">
                                                          <span className="bg-slate-700/60 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-slate-400">{r.entityLabel?.split(' ').pop()}</span>
                                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${isPos ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{tier}</span>
                                                       </div>
                                                       <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed flex-1">"{r.text}"</p>
-                                                      {queries[activeChat]?.urls && queries[activeChat].urls[r.entityLabel]?.urls?.[0] && (
-                                                         <a href={queries[activeChat].urls[r.entityLabel].urls[0]} target="_blank" rel="noreferrer" className="mt-4 self-end p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all">
-                                                            <LinkIcon size={14} />
-                                                         </a>
-                                                      )}
+                                                      {(() => {
+                                                         const cardUrl = r.metadata?.url || (queries[activeChat]?.urls && queries[activeChat].urls[r.entityLabel]?.urls?.[0]);
+                                                         if (!cardUrl) return null;
+                                                         return (
+                                                            <a href={getEnhancedUrl(cardUrl, r.text)} target="_blank" rel="noreferrer" className="mt-4 self-end p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all">
+                                                               <LinkIcon size={14} />
+                                                            </a>
+                                                         );
+                                                      })()}
                                                    </div>
                                                 );
                                              })}

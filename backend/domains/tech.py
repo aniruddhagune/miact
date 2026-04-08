@@ -209,3 +209,63 @@ TECH_DATE_KEYWORDS = {
     "discontinued_date": ["discontinued", "retired"],
     "update_date": ["update", "updated", "updates until"]
 }
+
+# ---- CATEGORIZATION GROUPS (Phase 3 Alignment) ----
+
+TECH_CATEGORY_MAP = {
+    # Dates
+    "announced": "Dates",
+    "status": "Dates",
+    "released": "Dates",
+    "release_date": "Dates",
+    "announcement_date": "Dates",
+    
+    # Core
+    "os": "Core",
+    "chipset": "Core",
+    "processor": "Core",
+    "cpu": "Core",
+    "gpu": "Core",
+    "graphics": "Core",
+    "platform": "Core",
+    "system on chip": "Core",
+    
+    # Memory
+    "card slot": "Memory",
+    "internal": "Memory",
+    "ram": "Memory",
+    "memory": "Memory",
+    "storage": "Memory",
+    
+    # Connectivity
+    "wlan": "Connectivity",
+    "bluetooth": "Connectivity",
+    "positioning": "Connectivity",
+    "nfc": "Connectivity",
+    "radio": "Connectivity",
+    "usb": "Connectivity",
+    "connectivity": "Connectivity",
+    
+    # Display
+    "type": "Display",
+    "size": "Display",
+    "resolution": "Display",
+    "protection": "Display",
+    "refresh rate": "Display",
+    "screen": "Display",
+    "display": "Display"
+}
+
+def get_aspect_group(aspect: str) -> str:
+    """Return the high-level category for a tech aspect."""
+    return TECH_CATEGORY_MAP.get(aspect.lower(), "Other")
+
+def group_aspects(records: list) -> dict:
+    """Group flat aspect records into a categorized dictionary."""
+    grouped = {}
+    for r in records:
+        group = get_aspect_group(r.get("aspect", ""))
+        if group not in grouped:
+            grouped[group] = []
+        grouped[group].append(r)
+    return grouped

@@ -179,28 +179,9 @@
 }
 
 .opinion-card.professional {
-    border: 1px solid rgba(255, 215, 0, 0.2);
-    border-top: 3px solid #ffd700;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%);
-    box-shadow: 0 10px 30px -10px rgba(255, 215, 0, 0.15), 0 0 20px -5px rgba(255, 215, 0, 0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.opinion-card.professional::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent 45%, rgba(255, 215, 0, 0.05) 50%, transparent 55%);
-    animation: shine 6s infinite;
-}
-
-@keyframes shine {
-    0% { transform: translateX(-30%) translateY(-30%); }
-    100% { transform: translateX(30%) translateY(30%); }
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%);
+    box-shadow: 0 4px 15px -3px rgba(255, 215, 0, 0.08), 0 4px 6px -2px rgba(255, 215, 0, 0.05);
+    border-right: 2px solid rgba(255, 212, 0, 0.4);
 }
 
 .spec-category-header td {
