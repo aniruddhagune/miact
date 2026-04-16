@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 import requests
 
 from backend.extractors.extractor_aspect import extract_aspects
-
+from backend.utils.logger import logger
 
 from backend.domains.tech import *
 from backend.domains.news import *
@@ -30,7 +30,10 @@ def extract_numeric(sentence, aspects):
         for match in matches:
             raw = match.group(1)
             raw = raw.replace(",", "")   # normalize commas
-            value = float(raw)
+            try:
+                value = float(raw)
+            except:
+                continue
             unit = match.group(2).lower()
 
             aspect = UNIT_ASPECT_MAPPING.get(unit)
@@ -212,10 +215,8 @@ def extract_named_values(sentence, aspects):
 
 # ---- Tables ----
 
-import pandas as pd
-
-
 def extract_tables(url: str):
+    logger.debug("EXTRACTOR", f"Attempting table extraction from: {url}")
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -246,7 +247,7 @@ def extract_tables(url: str):
                     .replace("╖", " ")
                     .replace("–", "-")
                     .replace("û", "-")
-                    .lower()   # 👈 ADD THIS
+                    .lower()
                 )
 
                 if key and value:
@@ -256,10 +257,11 @@ def extract_tables(url: str):
                         "type": "table"
                     })
 
+        logger.info("EXTRACTOR", f"Extracted {len(results)} rows from info tables")
         return results
 
     except Exception as e:
-        print("[TABLE ERROR]", e)
+        logger.error("EXTRACTOR", f"Table extraction error for {url}: {e}")
         return []
 
 def parse_table_numeric(value: str):
@@ -320,4 +322,6 @@ def extract_attributes(sentence, domain="generic"):
             seen.add(key)
             unique.append(r)
 
+    if unique:
+        logger.debug("EXTRACTOR", f"Extracted {len(unique)} attributes from sentence fragment")
     return unique

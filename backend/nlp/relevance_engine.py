@@ -4,6 +4,7 @@ Module for spaCy-based search result relevance scoring and categorization.
 import re
 from backend.nlp.spacy_loader import nlp
 from backend.domains.tech import DESCRIPTOR_TERMS, URL_TYPE_KEYWORDS
+from backend.utils.logger import logger
 
 def get_result_type(url: str, title: str) -> str:
     """Categorize the URL based on title keywords and URL structure."""
@@ -153,6 +154,7 @@ def calculate_relevance_score(query: str, title: str, url: str = "") -> tuple[fl
         trace.append(f"Bonus +{bonus}: Exact sequence match.")
         
     final_score = max(0.0, round(base_score, 3))
+    logger.debug("NLP", f"Relevance Score for '{title[:40]}...': {final_score}")
     return final_score, category, trace
 
 def is_highly_relevant(query: str, title: str, threshold: float = 0.4) -> bool:

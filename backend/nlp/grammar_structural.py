@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from backend.nlp.spacy_loader import nlp
 from backend.nlp.sentiment_lexicon import POSITIVE_WORDS, NEGATIVE_WORDS, INTENSIFIERS, POLARITY_INVERTERS, NEGATION_WORDS
-from backend.config.variables import DEBUG
+from backend.utils.logger import logger
 
 def _is_negated(token) -> bool:
     """
@@ -51,9 +51,6 @@ def _get_polarity_multiplier(token) -> int:
     multiplier = 1
     
     # Check if any ancestor is an inverter, or if we have an inverter child
-    # e.g., "no less than [amazing]" -> inverter is ancestor
-    # e.g., "[secure] less" -> inverter is child (uncommon but possible)
-    # e.g., "less [secure]" -> inverter is child
     
     # 1. Check if the token itself or any ancestor is an inverter
     path = [token] + list(token.ancestors)
@@ -109,7 +106,7 @@ def score_clause(text: str) -> tuple[float, list[str]]:
             
     # Phrases that spaCy might miss but are structurally unique
     if "not bad" in mod_text or "no issues" in mod_text:
-        score += 0.5 # Smaller bump as structural usually catches the 'bad' flip already
+        score += 0.5 
         
     return score, matched_terms
 
@@ -123,17 +120,14 @@ def is_question(doc) -> bool:
         # Question words at the start
         if token.i == 0:
             if token.lemma_ in ("what", "where", "who", "whom", "which", "how"):
-                # "When" is tricky - check if it's followed by a verb (question) or a subject (clause)
                 return True
             if token.text.lower() == "when":
-                # Look at next token
                 if len(doc) > 1 and doc[1].pos_ in ("AUX", "VERB") and doc[1].lemma_ not in ("i", "we", "you"):
                      return True
                 return False
                 
         # Auxiliary inversion: "Is it good?" (AUX before subject)
         if token.pos_ == "AUX" and token.dep_ == "ROOT":
-             # If root is AUX and comes before the first subject, it's likely a question
              for child in token.children:
                  if child.dep_.endswith("subj") and child.i > token.i:
                      return True
@@ -152,6 +146,7 @@ def sentence_completeness(doc) -> str:
     return "incomplete"
 
 def classify_clause(text: str, prev_result: dict | None = None) -> dict:
+    logger.debug("NLP", f"Analyzing clause structure: '{text[:50]}...'")
     doc = nlp(text)
     score, matched_terms = score_clause(text)
     
@@ -181,13 +176,15 @@ def classify_clause(text: str, prev_result: dict | None = None) -> dict:
     if completeness == "incomplete" and prev_result:
         inherited_aspect = prev_result.get("aspect")
         
-    return {
+    res = {
         "sentiment": sentiment,
         "score": max(-1.0, min(1.0, round(score / 3.0, 3))),
         "matched_terms": matched_terms,
-        "metaphor_aspects": [], # Placeholder for future patterns
-        "comparison_cues": [], # Use cues from score_clause if available
+        "metaphor_aspects": [], 
+        "comparison_cues": [], 
         "completeness": completeness,
         "is_question": question,
         "inherited_aspect": inherited_aspect
     }
+    logger.debug("NLP", f"Clause classification: sentiment={sentiment}, score={res['score']}, complete={completeness}")
+    return res

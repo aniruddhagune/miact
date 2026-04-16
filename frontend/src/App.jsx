@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Component } from "react";
 import "./App.css";
-import { ArrowRight, Loader, ChevronLeft, History, Link as LinkIcon } from "lucide-react";
+import { ArrowRight, Loader, ChevronLeft, History, Link as LinkIcon, Terminal } from "lucide-react";
 
 class ErrorBoundary extends Component {
    constructor(props) {
@@ -36,6 +36,7 @@ function App() {
    const [input, setInput] = useState("");
    const [loading, setLoading] = useState(false);
    const [isDragging, setIsDragging] = useState(false);
+   const [debugMode, setDebugMode] = useState(false);
 
    // Sources Card
    const [showSourcesPopup, setShowSourcesPopup] = useState(false);
@@ -44,6 +45,36 @@ function App() {
    const sourcesToggleRef = useRef(null);
 
    const containerRef = useRef(null);
+
+   // Initialize Debug Mode from backend
+   useEffect(() => {
+     const fetchDebugMode = async () => {
+       try {
+         const response = await fetch("http://127.0.0.1:8000/api/debug");
+         const data = await response.json();
+         setDebugMode(data.debug);
+       } catch (err) {
+         console.error("Failed to fetch initial debug mode:", err);
+       }
+     };
+     fetchDebugMode();
+   }, []);
+
+   const handleToggleDebug = async () => {
+     const newDebugState = !debugMode;
+     try {
+       const response = await fetch("http://127.0.0.1:8000/api/debug", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ debug: newDebugState }),
+       });
+       const data = await response.json();
+       setDebugMode(data.debug);
+       alert(`Debug mode ${data.debug ? "enabled" : "disabled"}. Check the console or server logs.`);
+     } catch (err) {
+       alert("Failed to toggle debug mode.");
+     }
+   };
 
    // Sync sources tab with active chat
    useEffect(() => {
@@ -716,8 +747,26 @@ function App() {
                   ))}
                </div>
 
-               {/* Clear Cache Button at Bottom */}
-               <div className="p-3 border-t border-white/5 mt-auto">
+               {/* Debug and Clear Cache Buttons at Bottom */}
+               <div className="p-3 border-t border-white/5 mt-auto space-y-2">
+                  <button
+                     onClick={handleToggleDebug}
+                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-all duration-300 font-inter text-xs font-bold uppercase tracking-widest ${sidebarOpen
+                        ? (debugMode ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.2)]" : "bg-slate-800/40 text-slate-500 border border-white/5 hover:bg-slate-800/60")
+                        : (debugMode ? "text-cyan-400" : "text-slate-600 hover:text-slate-400")
+                        }`}
+                     title={debugMode ? "Disable Debug Mode" : "Enable Debug Mode"}
+                  >
+                     {sidebarOpen ? (
+                        <>
+                           <Terminal size={14} />
+                           <span>Debug: {debugMode ? "ON" : "OFF"}</span>
+                        </>
+                     ) : (
+                        <Terminal size={20} />
+                     )}
+                  </button>
+
                   <button
                      onClick={handleClearCache}
                      className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-all duration-300 font-inter text-xs font-bold uppercase tracking-widest ${sidebarOpen

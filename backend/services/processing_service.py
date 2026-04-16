@@ -2,6 +2,7 @@ from backend.database.helpers import get_or_create_entity, get_or_create_source,
 from backend.database.attribute_repository import insert_attribute
 from backend.domains.regions import REGIONS, resolve_region
 import re
+from backend.utils.logger import logger
 
 # Regex to find a region code at the start (e.g. "EU:", "NA -") or end (e.g. "(EU)")
 _REGION_CODE_RE = re.compile(
@@ -53,9 +54,11 @@ def _split_regional_value(val: str) -> list[str] | None:
 
 
 def group_variants_and_persist(results_dict: dict):
+    logger.info("PROCESSING", f"Grouping variants and persisting for {len(results_dict)} entities")
     final_dict = {}
 
     for entity_name, items in results_dict.items():
+        logger.debug("PROCESSING", f"Processing {len(items)} items for {entity_name}")
         processed_items = []
         
         display_specs = []
@@ -173,6 +176,7 @@ def group_variants_and_persist(results_dict: dict):
         # Baseline: 5.0 (neutral). Each aspect's mean compound score adjusts it.
         subjective_opinions = [r for r in items if r.get("type", "") == "subjective"]
         if subjective_opinions:
+            logger.debug("PROCESSING", f"Calculating scores from {len(subjective_opinions)} opinions")
             aspect_scores: dict[str, list[float]] = {}
             for op in subjective_opinions:
                 asp = op.get("aspect", "")
@@ -200,6 +204,7 @@ def group_variants_and_persist(results_dict: dict):
 
         final_dict[entity_name] = other_items
 
+        logger.debug("PROCESSING", f"Persisting {len(other_items)} attributes to database")
         for r in other_items:
             url = r.get("source")
             if not url:
@@ -228,6 +233,7 @@ def group_variants_and_persist(results_dict: dict):
                     confidence_score=conf_score
                 )
             except Exception as e:
-                print(f"[DB Error] persist failed for {url}: {e}")
+                logger.error("PROCESSING", f"Persist failed for {url}: {e}")
 
+    logger.info("PROCESSING", "All entities processed and persisted")
     return final_dict

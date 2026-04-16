@@ -11,8 +11,10 @@ from backend.services.pipeline_service import process_query_url
 from backend.services.processing_service import group_variants_and_persist
 from backend.services.entity_resolver_service import resolve_canonical_entities
 from backend.nlp.query_intent import analyze_query_intent
+from backend.utils.logger import logger
 
 async def execute_search(query: str, t: str = None):
+    logger.info("ORCHESTRATOR", f"Starting search execution for: '{query}'")
     from backend.services.utils import get_manual_urls
     manual_urls = get_manual_urls(query)
     parsed = parse_query(query)
@@ -22,6 +24,7 @@ async def execute_search(query: str, t: str = None):
 
         # ---- MANUAL URL MODE ----
         if manual_urls:
+            logger.info("ORCHESTRATOR", f"Manual URL mode detected: {len(manual_urls)} URLs")
             yield f"data: {json.dumps({'step': 'processing', 'message': f'Direct Scrape: {len(manual_urls)} URLs found...'})}\n\n"
             results = {}
             urls_dict = {}
@@ -31,18 +34,17 @@ async def execute_search(query: str, t: str = None):
             inferred_entity = entities[0] if entities else None
             
             for url in manual_urls:
+                logger.debug("ORCHESTRATOR", f"Processing manual URL: {url}")
                 yield f"data: {json.dumps({'step': 'partial', 'entity': inferred_entity or 'Analyzing...', 'url': url})}\n\n"
                 try:
                     import asyncio
                     # Direct URLs get DUAL extraction (Both objective and subjective)
                     pipeline_results = await asyncio.to_thread(process_query_url, parsed, url, only_objective=False, only_subjective=False)
                 except Exception as e:
-                    print(f"Error processing manual URL {url}: {e}")
+                    logger.error("ORCHESTRATOR", f"Error processing manual URL {url}: {e}")
                     pipeline_results = None
                 
                 if pipeline_results:
-                    # If we don't have an entity name yet, try to infer it from the first result
-                    # or the page title (not available directly here, but pipeline results have 'entity' matched)
                     found_entity = pipeline_results[0].get("entity") if pipeline_results else None
                     target_ent = inferred_entity or found_entity or "Global"
                     
@@ -73,20 +75,24 @@ async def execute_search(query: str, t: str = None):
             # Show a brief update if it was resolved differently
             from backend.config.variables import DEBUG
             if DEBUG and original_entities != canonical_entities:
+                logger.info("ORCHESTRATOR", f"Entities resolved: {original_entities} -> {canonical_entities}")
                 yield f"data: {json.dumps({'step': 'processing', 'message': f'Resolved: {canonical_entities}'})}\n\n"
 
         # ---- QUERY INTENT ANALYSIS ----
+        logger.debug("ORCHESTRATOR", "Analyzing query intent")
         intent = analyze_query_intent(query)
         parsed["intent"] = intent
 
         # ---- STEP 1: CHECK DATABASE ----
+        logger.info("ORCHESTRATOR", "Checking cache")
         db_results = fetch_from_db(parsed)
 
         # ---- STEP 2: INTELLIGENT DB CHECK ----
-        attribute = parsed.get("attribute")
+        # In this version, we always run a fresh search for now unless use_db is true
         use_db = False
 
-        if use_db:
+        if use_db and len(db_results["data"]) > 0:
+            logger.info("ORCHESTRATOR", "Cache hit, returning stored results")
             grouped_db_results = {}
             for item in db_results["data"]:
                 ent = item.get("entity", "global")
@@ -105,10 +111,11 @@ async def execute_search(query: str, t: str = None):
             return
 
         # ---- STEP 3: FALLBACK TO SEARCH ----
+        logger.info("ORCHESTRATOR", "No cache, proceeding to search")
         results = {}
         urls_dict = {}
 
-        # ---- CLASSIFY QUERY TYPE for trusted domain selection ----
+        # ---- CLASSIFY QUERY TYPE ----
         entities = parsed.get("entities", [])
         filter_data = parsed.get("filter")
         query_type = infer_query_type(query, entities=entities)
@@ -116,6 +123,7 @@ async def execute_search(query: str, t: str = None):
 
         if parsed["mode"] == "news" or query_type.startswith("news"):
             news_domains = get_news_domains(query_type)
+            logger.info("ORCHESTRATOR", f"News search on: {news_domains}")
             news_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains)
             urls_dict["news"] = {"query": query, "urls": [r["url"] for r in news_results]}
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
@@ -123,38 +131,35 @@ async def execute_search(query: str, t: str = None):
             yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
             return
 
-        # Select fact cascade domains based on inferred type
+        # Select fact cascade domains
         if query_type == "tech_laptop":
             fact_cascade_domains = ["notebookcheck.net", "wikipedia.org", "rtings.com"]
-        else:  # tech_phone or general
+        else:
             fact_cascade_domains = ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]
 
         if entities:
             for entity in entities:
+                logger.info("ORCHESTRATOR", f"Processing entity: {entity}")
                 extracted_results = []
                 fact_urls = []
-                
-                # Entity-specific parsed: treat this entity as if it were the only one
                 entity_parsed = {**parsed, "entities": [entity], "original": entity}
                 
-                # --- SYNCHRONOUS FACT CASCADE (per-type domains) ---
+                # --- SYNCHRONOUS FACT CASCADE ---
                 has_enough_facts = False
                 for domain in fact_cascade_domains:
-                    if has_enough_facts:
-                        break
+                    if has_enough_facts: break
                         
+                    logger.debug("ORCHESTRATOR", f"Cascade: searching {domain} for {entity}")
                     search_query = f"{entity} site:{domain}"
                     if filter_data:
                         search_query += f" {filter_data['value']}"
                         
                     domain_results = await fetch_search_results_async(search_query, num_results=2)
-                    if not domain_results:
-                        continue
+                    if not domain_results: continue
                         
                     for r in domain_results:
                         url = r["url"]
-                        if url in fact_urls:
-                            continue
+                        if url in fact_urls: continue
                             
                         fact_urls.append(url)
                         yield f"data: {json.dumps({'step': 'partial', 'entity': entity, 'url': url})}\n\n"
@@ -162,12 +167,11 @@ async def execute_search(query: str, t: str = None):
                             import asyncio
                             pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_objective=True)
                         except Exception as e:
-                            print(f"Error processing URL {url}: {e}")
+                            logger.error("ORCHESTRATOR", f"Error processing URL {url}: {e}")
                             pipeline_results = None
                             
                         if pipeline_results:
                             extracted_results.extend([x for x in pipeline_results if x.get("type", "") in ["table", "text"]])
-                            
                             found_aspects = {x["aspect"] for x in extracted_results if x.get("type", "") == "table"}
                             if "display" in found_aspects and "battery" in found_aspects and ("ram" in found_aspects or "storage" in found_aspects):
                                 has_enough_facts = True
@@ -188,7 +192,7 @@ async def execute_search(query: str, t: str = None):
                             import asyncio
                             pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_subjective=True)
                         except Exception as e:
-                            print(f"Error processing review URL {url}: {e}")
+                            logger.error("ORCHESTRATOR", f"Error processing review URL {url}: {e}")
                             pipeline_results = None
                         
                         if pipeline_results:
@@ -196,22 +200,17 @@ async def execute_search(query: str, t: str = None):
                             
                 urls_dict[entity] = {"query": entity, "urls": fact_urls + review_urls}
                 yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
-                
                 results[entity] = extracted_results
 
-            yield f"data: {json.dumps({'step': 'processing', 'message': 'Validating and Grouping Variants...'})}\n\n"
+            yield f"data: {json.dumps({'step': 'processing', 'message': 'Grouping Variants...'})}\n\n"
             results = group_variants_and_persist(results)
 
         else:
-            search_query = ""
+            # Global search logic
+            logger.info("ORCHESTRATOR", "Global search path")
+            search_query = parsed.get("attribute", "") + " " + (str(filter_data["value"]) if filter_data else "")
+            search_query = search_query.strip() or query
 
-            if attribute:
-                search_query += attribute + " "
-
-            if filter_data:
-                search_query += str(filter_data["value"]) + " "
-
-            search_query = search_query.strip()
             general_domains = get_tech_domains(query_type)
             search_results = await fetch_search_results_async(search_query, num_results=5, trusted_domains=general_domains)
             urls_list = [r["url"] for r in search_results]
@@ -223,7 +222,7 @@ async def execute_search(query: str, t: str = None):
                 try:
                     pipeline_results = process_query_url(parsed, r["url"])
                 except Exception as e:
-                    print(f"Error processing URL {r['url']}: {e}")
+                    logger.error("ORCHESTRATOR", f"Error processing URL {r['url']}: {e}")
                     pipeline_results = None
 
                 if pipeline_results:
@@ -231,9 +230,10 @@ async def execute_search(query: str, t: str = None):
                     yield f"data: {json.dumps({'step': 'partial', 'entity': 'global', 'url': r['url']})}\n\n"
 
             results["global"] = extracted_results
-            yield f"data: {json.dumps({'step': 'processing', 'message': 'Validating and Grouping Variants...'})}\n\n"
+            yield f"data: {json.dumps({'step': 'processing', 'message': 'Grouping Results...'})}\n\n"
             results = group_variants_and_persist(results)
 
+        logger.info("ORCHESTRATOR", "Search sequence complete")
         yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

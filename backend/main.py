@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes import query
 from backend.routes import search
+from backend.routes import debug
 
 app = FastAPI()
 
@@ -19,3 +20,4 @@ app.add_middleware(
 
 app.include_router(query.router)
 app.include_router(search.router)
+app.include_router(debug.router)

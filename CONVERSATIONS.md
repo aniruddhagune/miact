@@ -127,3 +127,38 @@ To balance the goals of "Lightweight" and "Intelligent," we have decided to deve
 The core "Surface Issues" regarding search accuracy and result layout are resolved. The project is now faster (via caching), cleaner (via domain guards), and more user-friendly (via scroll fixes). Next session can proceed with **Phase 2: Hybrid AI Integration (Ollama vs. Advanced Heuristics)**.
 
 ---
+
+## Session 7: Debugging Infrastructure, Technical Debt & Security (16 April 2026)
+
+### 1. Git & Workflow Management
+*   **New Branch:** Created and pushed the `d-work` branch to GitHub to serve as the stable development base for current feature work.
+*   **Default State:** Set the application to run in `DEBUG` mode by default to facilitate immediate traceability during the current development phase.
+
+### 2. Implementation: Structured Debugging & Logging
+**Problem:** Lack of visibility into server-side operations, making it difficult to track scraper success rates, database interactions, and NLP pipeline flow.
+**Solution:**
+*   **MIACTLogger (`backend/utils/logger.py`):** Developed a thread-safe singleton logger that writes structured JSON entries to session-specific files.
+*   **Differentiated Logs:** Implemented service-level labeling (e.g., `[SEARCH]`, `[PIPELINE]`, `[DATABASE]`, `[NLP]`) to prevent log interleaving and ensure clear traceability.
+*   **Storage Location:** Logs are now stored in `backend/debug/session_{timestamp}.log`, keeping the root directory clean while preserving history.
+*   **Runtime Toggle:** Integrated a new route `backend/routes/debug.py` that allows the system to toggle verbose console logging at runtime via API without a restart.
+*   **Frontend Integration:** Added a "Debug Mode" toggle button in the sidebar with a `Terminal` icon. It visually reflects the server state (Cyan for ON) and provides instant feedback via alerts.
+
+### 3. Phase A: Technical Debt & Security (Project Audit Completion)
+**Goal:** Align the project with professional security and documentation standards.
+**Implementation Details:**
+*   **Environment Variables:** Successfully moved all database credentials (DB_NAME, DB_USER, DB_PASSWORD, etc.) from hardcoded strings to a protected `.env` file.
+*   **Single Source of Truth:** Refactored `backend/config/variables.py` to use `python-dotenv`, ensuring the entire backend sources its configuration from environment variables.
+*   **Database Hardening:** Updated `backend/database/connection.py` to eliminate hardcoded credentials, mitigating a critical security vulnerability identified in the audit.
+*   **Documentation Synchronization:** 
+    *   **Synopsis.md:** Fully updated to reflect the move from Streamlit to the React/FastAPI stack. Updated module descriptions to match the current spaCy-based NLP pipeline.
+    *   **README.md:** Rewritten to include modern setup instructions, prerequisites (PostgreSQL, Node.js), and a clear architecture overview.
+*   **Security Audit:** Verified that no sensitive credentials or system-level paths are leaked through SSE streams or the new logging system.
+
+### 4. Impact:
+*   **Traceability:** Every step of the search process—from query parsing to variant grouping—is now logged with full data context.
+*   **Security:** The codebase is now safe for public repository hosting with no sensitive secrets exposed.
+*   **Maintainability:** The technical debt from the stack migration has been cleared, providing a consistent foundation for Phase B.
+
+---
+**Status for Next Session:**
+Phase A is complete. The system is secure, documented, and highly observable. The team is now moving to **Phase B: Architecture & Resilience**, focusing on advanced scraping (Playwright integration) and unified configuration schemas.

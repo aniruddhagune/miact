@@ -3,15 +3,14 @@ from backend.extractors.extractor_aspect import extract_aspects
 from backend.nlp.objectivity_classifier import classify_sentence
 from backend.nlp.grammar_structural import classify_clause
 from backend.nlp.sentiment_lexicon import POSITIVE_WORDS, NEGATIVE_WORDS
-from backend.config.variables import DEBUG
+from backend.utils.logger import logger
 
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
     analyzer = SentimentIntensityAnalyzer()
 except ImportError:
     analyzer = None
-    if DEBUG:
-        print("[mapper] WARNING: vaderSentiment not found. Falling back to structural-only scoring.")
+    logger.warning("NLP", "vaderSentiment not found. Falling back to structural-only scoring.")
 
 
 def split_sentence(sentence: str):
@@ -25,6 +24,7 @@ def split_sentence(sentence: str):
 
 
 def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
+    logger.debug("NLP", f"Mapping aspect-sentiment for: '{sentence[:50]}...'")
     results = []
 
     parts = split_sentence(sentence)
@@ -45,13 +45,11 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
         # If sentence is incomplete and no aspects found, borrow aspect from previous
         if grammar["completeness"] == "incomplete" and not aspects and grammar.get("inherited_aspect"):
             aspects = [grammar["inherited_aspect"]]
-            if DEBUG:
-                print(f"[mapper] Inherited aspect '{grammar['inherited_aspect']}' for incomplete: '{part}'")
+            logger.debug("NLP", f"Inherited aspect '{grammar['inherited_aspect']}' for incomplete: '{part}'")
 
         # Pure factual questions with no sentiment words → skip
         if grammar["is_question"] and grammar["sentiment"] == "neutral" and not grammar["matched_terms"]:
-            if DEBUG:
-                print(f"[mapper] Skipping neutral question: '{part}'")
+            logger.debug("NLP", f"Skipping neutral question: '{part}'")
             prev_grammar = grammar
             continue
 
@@ -80,8 +78,7 @@ def analyze_aspect_sentiment(sentence: str, domain: str = "generic"):
             prev_grammar = grammar
             continue
 
-        if DEBUG:
-            print(f"[mapper] '{part[:60]}' → aspects={unique_aspects}, sentiment={sentiment}, score={score:.3f}")
+        logger.debug("NLP", f"Analyzed part: '{part[:40]}...' -> aspects={unique_aspects}, sentiment={sentiment}, score={score:.3f}")
 
         if len(unique_aspects) > 1:
             aspect = "multiple"
@@ -111,8 +108,7 @@ def analyze_sentiment_vader(text: str) -> float:
     Returns the compound VADER score for a piece of text.
     Used as fallback for 'Overall Impression' when aspect-based analysis is empty.
     """
-    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-    analyzer = SentimentIntensityAnalyzer()
+    if not analyzer:
+        return 0.0
     vs = analyzer.polarity_scores(text)
     return vs['compound']
-

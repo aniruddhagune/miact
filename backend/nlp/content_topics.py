@@ -17,13 +17,12 @@ from collections import Counter
 from typing import Optional
 
 from backend.nlp.spacy_loader import nlp
-from backend.config.variables import DEBUG
+from backend.utils.logger import logger
 from backend.utils.text_helpers import split_into_sentences
 
 # ---- Static English IDF baseline (Strategy 1) ----
 # Pre-computed approximate IDF values from English Wikipedia frequency data.
 # Words not in this dict default to IDF = 6.0 (moderately rare).
-# This is a starter set; can be expanded from a full Wikipedia dump later.
 _STATIC_IDF = {
     # Ultra-common (near-zero information value)
     "the": 0.01, "is": 0.05, "are": 0.05, "was": 0.05, "were": 0.05,
@@ -246,6 +245,7 @@ def extract_content_topics(
             "dates_mentioned": [...],         # DATE entities from NER
         }
     """
+    logger.debug("NLP", "Extracting content topics from text")
     if sentences is None:
         sentences = split_into_sentences(text)
 
@@ -316,10 +316,5 @@ def extract_content_topics(
         "dates_mentioned": sorted(all_dates),
     }
 
-    if DEBUG:
-        print(f"[content_topics] primary_subjects={primary_subjects[:3]}, "
-              f"domain={inferred_domain}, event={event_type}, "
-              f"NER_count={sum(len(v) for v in all_ner.values())}, "
-              f"triples={len(unique_rels)}")
-
+    logger.info("NLP", f"Content Topics Extracted: domain={inferred_domain}, subjects={primary_subjects[:3]}")
     return result

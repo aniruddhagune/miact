@@ -2,6 +2,7 @@ import re
 from backend.services.mapper_domain import detect_domain
 from backend.domains.tech import ASPECT_KEYWORDS, UNIT_ASPECT_MAPPING
 from backend.domains.news import NEWS_KEYWORDS
+from backend.utils.logger import logger
 
 
 SOURCE_KEYWORDS = [
@@ -106,6 +107,7 @@ def detect_source(query_lower: str):
 # MAIN PARSER
 # -------------------------------
 def parse_query(query: str):
+    logger.debug("PARSER", f"Parsing query: '{query}'")
     original_query = query.strip()
     query_lower = original_query.lower()
 
@@ -114,12 +116,14 @@ def parse_query(query: str):
 
     # ---- NEWS ----
     if any(word in query_lower for word in NEWS_KEYWORDS):
-        return {
+        res = {
             "mode": "news",
             "original": original_query,
             "entities": [],
             "attribute": None
         }
+        logger.info("PARSER", "Query identified as NEWS mode")
+        return res
 
     attribute = detect_attribute(query_lower)
     source = detect_source(query_lower)
@@ -138,7 +142,7 @@ def parse_query(query: str):
     # ---- TYPE ----
     query_type = "comparison" if len(entities) > 1 else "simple"
 
-    return {
+    res = {
         "mode": "product",
         "type": query_type,
         "original": original_query,
@@ -147,3 +151,5 @@ def parse_query(query: str):
         "filter": filter_data,
         "source": source
     }
+    logger.info("PARSER", f"Parsed: mode={res['mode']}, type={res['type']}, entities={res['entities']}, attr={res['attribute']}")
+    return res

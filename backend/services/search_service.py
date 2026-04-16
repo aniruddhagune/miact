@@ -1,7 +1,7 @@
 import asyncio
 from ddgs import DDGS
-
 import re
+from backend.utils.logger import logger
 
 def is_valid_match(query: str, title: str):
     entity_lower = query.lower()
@@ -11,6 +11,8 @@ def is_valid_match(query: str, title: str):
     for mod in modifiers:
         if mod not in entity_lower and re.search(rf"\b{mod}\b", title_lower):
             return False
+    return True
+
 def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tuple[bool, int, str, list[str]]:
     """
     Score a search result match for relevance using the new spaCy engine.
@@ -42,19 +44,19 @@ def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tup
     return True, score, category, trace
 
 def _do_ddg_sync(query: str, num_results: int):
+    logger.debug("SEARCH", f"Executing DDG sync for: '{query}'")
     results = []
     try:
         # Use DDGS with regional settings (India - English)
-        # kl='in-en' for India/English. Can be customized.
         with DDGS() as ddgs:
             raw_results = list(ddgs.text(query, region='in-en', max_results=num_results))
-            print(f"[DEBUG] Raw search results for '{query}': {len(raw_results)}")
+            logger.debug("SEARCH", f"Raw search results received: {len(raw_results)}")
             for r in raw_results:
                 title = r.get("title", "")
                 url = r.get("href", "")
                 snippet = r.get("body", "")
 
-                # Language Guard: Force English Wikipedia to avoid foreign language results
+                # Language Guard: Force English Wikipedia
                 if "wikipedia.org" in url and not url.startswith("https://en.wikipedia.org"):
                     continue
 
@@ -70,15 +72,16 @@ def _do_ddg_sync(query: str, num_results: int):
                         "trace": trace
                     })
                 else:
-                    print(f"[DEBUG] Filtered out title: {title}")
+                    logger.debug("SEARCH", f"Filtered out irrelevant result: {title}", data={"url": url, "trace": trace})
     except Exception as e:
-        print(f"[SEARCH ERROR] {e}")
+        logger.error("SEARCH", f"DuckDuckGo search error: {e}")
     return results
 
 async def execute_ddg(query: str, num_results: int):
     return await asyncio.to_thread(_do_ddg_sync, query, num_results)
 
 async def fetch_search_results_async(query: str, num_results: int = 10, trusted_domains: list = None):
+    logger.info("SEARCH", f"Fetching results for: '{query}'", data={"num_results": num_results, "trusted": trusted_domains})
     results = []
     if trusted_domains:
         site_query = " OR ".join([f"site:{d}" for d in trusted_domains])
@@ -90,13 +93,14 @@ async def fetch_search_results_async(query: str, num_results: int = 10, trusted_
             results.append(p)
             
         # Fallback query if insufficient
-        if len(trusted_results) < 2:
-            # We execute fallback without site constraints
-            fallback_results = await execute_ddg(query, num_results - len(trusted_results))
+        if len(results) < 2:
+            logger.debug("SEARCH", "Insufficient results from trusted domains. Running broad fallback.")
+            fallback_results = await execute_ddg(query, num_results - len(results))
             for f in fallback_results:
                 if not any(x["url"] == f["url"] for x in results):
                     results.append(f)
     else:
         results = await execute_ddg(query, num_results)
 
+    logger.info("SEARCH", f"Total relevant results found: {len(results)}")
     return results

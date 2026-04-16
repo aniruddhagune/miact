@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import re
 from backend.nlp.spacy_loader import nlp
-from backend.config.variables import DEBUG
+from backend.utils.logger import logger
 
 
 # ---- Intent signal word sets ----
@@ -163,6 +163,7 @@ def analyze_query_intent(query: str, title: str = None) -> dict:
             "title_relevance": float | None,
         }
     """
+    logger.debug("NLP", f"Analyzing intent for: '{query}'")
     doc = nlp(query)
     query_lower = query.lower()
 
@@ -207,9 +208,5 @@ def analyze_query_intent(query: str, title: str = None) -> dict:
         "title_relevance": title_relevance,
     }
 
-    if DEBUG:
-        print(f"[query_intent] '{query}' → specificity={specificity}, "
-              f"type={intent_type}, entities={entities}, aspects={aspects}, "
-              f"temporal={temporal_state}")
-
+    logger.info("NLP", f"Intent Analysis: specificity={specificity}, type={intent_type}, temporal={temporal_state}")
     return result

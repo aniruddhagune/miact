@@ -5,6 +5,7 @@ from backend.extractors.detector_subjects import extract_subjects, build_subject
 from backend.extractors.extractor_data import extract_attributes, extract_tables, parse_table_numeric
 from backend.services.utils import deduplicate_attributes
 from backend.domains.opinion_aspects import map_to_canonical_aspect
+from backend.utils.logger import logger
 
 # Modern NLP Imports
 from backend.nlp.grammar_structural import classify_clause
@@ -36,6 +37,7 @@ def is_valid_opinion(text, aspect, score, structural_info=None):
 
 
 def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False, fallback_text=None):
+    logger.info("PIPELINE", f"Processing URL: {url}")
     query = parsed.get("original", "")
     domain = detect_domain(query)
 
@@ -51,6 +53,7 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
     # ---- SCRAPING FALLBACK ----
     # If scraping failed/blocked, use the snippet as basic text
     if (not data or not data.get("text")) and fallback_text:
+        logger.warning("PIPELINE", f"Scraping failed for {url}. Using fallback snippet.")
         data = {
             "title": "Search Summary",
             "text": fallback_text,
@@ -61,12 +64,14 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
         }
 
     if not data:
+        logger.error("PIPELINE", f"Extraction failed for {url}")
         return None
 
     results = []
     
     # If it's a snippet, we'll label the aspect as "Summary" so it's visible
     if data.get("is_snippet"):
+        logger.debug("PIPELINE", "Using snippet fallback results")
         for subject in subjects:
             results.append({
                 "entity": subject,
@@ -81,6 +86,7 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
     seen_subjective_texts = set()
 
     tables = data.get("tables", []) if not only_subjective else []
+    logger.debug("PIPELINE", f"Found {len(tables)} table entries")
     for row in tables:
         parsed_numeric = parse_table_numeric(row["value"])
         final_value = parsed_numeric["value"] if parsed_numeric else row["value"]
@@ -105,6 +111,8 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                 any(d in url.lower() for d in ["gsmarena.com", "theverge.com", "engadget.com"])
 
     sentences = split_into_sentences(clean_text(data.get("text", "")))
+    logger.debug("PIPELINE", f"Analyzing {len(sentences)} sentences for opinions")
+    
     for s in sentences:
         parts = split_comparison(s)
         for part in parts:
@@ -144,7 +152,10 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
 
     # ---- GSMARENA OPINIONS ----
     if not only_objective:
-        for op in data.get("opinions", []):
+        gsma_ops = data.get("opinions", [])
+        if gsma_ops:
+            logger.debug("PIPELINE", f"Processing {len(gsma_ops)} site-extracted opinions")
+        for op in gsma_ops:
             op_text = op["text"]
             sentiment_aspects = analyze_aspect_sentiment(op_text, domain)
             
@@ -172,4 +183,5 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
                         "metadata": {"user_review": True, "is_professional": False}
                     })
 
+    logger.info("PIPELINE", f"Finished {url}. Total items: {len(results)}")
     return results

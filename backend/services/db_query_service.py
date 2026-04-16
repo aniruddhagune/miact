@@ -1,7 +1,8 @@
 from backend.database.connection import get_connection
-
+from backend.utils.logger import logger
 
 def fetch_from_db(parsed):
+    logger.debug("DATABASE", "Fetching results from database cache", data={"entities": parsed.get("entities")})
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -38,11 +39,16 @@ def fetch_from_db(parsed):
         query += f" AND e.name IN ({placeholders})"
         params.extend(parsed["entities"])
 
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        logger.info("DATABASE", f"Cache lookup complete. Found {len(rows)} records.")
+    except Exception as e:
+        logger.error("DATABASE", f"Database query failed: {e}")
+        rows = []
+    finally:
+        cursor.close()
+        conn.close()
 
     results = []
 
