@@ -44,13 +44,20 @@ def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tup
 def _do_ddg_sync(query: str, num_results: int):
     results = []
     try:
+        # Use DDGS with regional settings (India - English)
+        # kl='in-en' for India/English. Can be customized.
         with DDGS() as ddgs:
-            raw_results = list(ddgs.text(query, max_results=num_results))
+            raw_results = list(ddgs.text(query, region='in-en', max_results=num_results))
             print(f"[DEBUG] Raw search results for '{query}': {len(raw_results)}")
             for r in raw_results:
                 title = r.get("title", "")
                 url = r.get("href", "")
                 snippet = r.get("body", "")
+
+                # Language Guard: Force English Wikipedia to avoid foreign language results
+                if "wikipedia.org" in url and not url.startswith("https://en.wikipedia.org"):
+                    continue
+
                 is_valid, score, category, trace = score_match(query, title, url, snippet)
                 if is_valid:
                     results.append({
@@ -64,8 +71,8 @@ def _do_ddg_sync(query: str, num_results: int):
                     })
                 else:
                     print(f"[DEBUG] Filtered out title: {title}")
-    except:
-        pass
+    except Exception as e:
+        print(f"[SEARCH ERROR] {e}")
     return results
 
 async def execute_ddg(query: str, num_results: int):

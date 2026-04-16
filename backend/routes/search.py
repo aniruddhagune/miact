@@ -29,6 +29,21 @@ def db_status():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@router.post("/clear-db")
+def clear_db():
+    try:
+        from backend.database.connection import get_connection
+        conn = get_connection()
+        cursor = conn.cursor()
+        # Truncate tables to clear all cache
+        cursor.execute("TRUNCATE TABLE facts, documents, entities, sources CASCADE")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"status": "success", "message": "Cache cleared successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @router.get("/search")
 async def search(query: str, t: str = None):
     parsed = parse_query(query)
@@ -40,30 +55,33 @@ async def search(query: str, t: str = None):
         db_results = fetch_from_db(parsed)
 
         # ---- STEP 2: INTELLIGENT DB CHECK ----
-        attribute = parsed.get("attribute")
-
-        use_db = False
-        # if attribute:
-        #     if attribute in db_results["found_aspects"]:
-        #         use_db = True
-        # else:
-        #     if db_results["data"]:
-        #         use_db = True
+        # If we found any results for the entities in the database, use them.
+        use_db = len(db_results["data"]) > 0
 
         if use_db:
             grouped_db_results = {}
+            db_urls = {}
+            
             for item in db_results["data"]:
                 ent = item.get("entity", "global")
                 if ent not in grouped_db_results:
                     grouped_db_results[ent] = []
-                item["type"] = item.get("type", "table")
+                    db_urls[ent] = {"query": ent, "urls": []}
+                
+                # Reconstruct results format
                 grouped_db_results[ent].append(item)
+                
+                # Reconstruct URLs for the sources popup
+                source_url = item.get("source")
+                if source_url and source_url not in db_urls[ent]["urls"]:
+                    db_urls[ent]["urls"].append(source_url)
 
             final_resp = {
                 "step": "result",
                 "source": "database",
                 "parsed": parsed,
-                "results": grouped_db_results
+                "results": grouped_db_results,
+                "urls": db_urls
             }
             yield f"data: {json.dumps(final_resp)}\n\n"
             return
@@ -80,18 +98,38 @@ async def search(query: str, t: str = None):
 
         if parsed["mode"] == "news" or query_type.startswith("news"):
             news_domains = get_news_domains(query_type)
-            news_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains)
-            urls_dict["news"] = {"query": query, "urls": [r["url"] for r in news_results]}
+            search_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains)
+            urls_list = [r["url"] for r in search_results]
+            urls_dict["news"] = {"query": query, "urls": urls_list}
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
-            results["news"] = news_results
+
+            extracted_results = []
+            for r in search_results:
+                url = r["url"]
+                snippet = r.get("snippet", "")
+                yield f"data: {json.dumps({'step': 'partial', 'entity': 'News', 'url': url})}\n\n"
+                try:
+                    import asyncio
+                    # Pass snippet as fallback
+                    pipeline_results = await asyncio.to_thread(process_query_url, parsed, url, fallback_text=snippet)
+                    if pipeline_results:
+                        extracted_results.extend(pipeline_results)
+                except Exception as e:
+                    print(f"Error processing news URL {url}: {e}")
+
+            results["news"] = extracted_results
+            yield f"data: {json.dumps({'step': 'processing', 'message': 'Grouping Results...'})}\n\n"
+            results = group_variants_and_persist(results)
             yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
             return
 
         # Select fact cascade domains based on inferred type
         if query_type == "tech_laptop":
             fact_cascade_domains = ["notebookcheck.net", "wikipedia.org", "rtings.com"]
-        else:  # tech_phone or general
+        elif query_type == "tech_phone":
             fact_cascade_domains = ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]
+        else:  # news_* or general
+            fact_cascade_domains = ["wikipedia.org"]
 
         if entities:
             for entity in entities:
@@ -133,22 +171,29 @@ async def search(query: str, t: str = None):
                         if pipeline_results:
                             extracted_results.extend([x for x in pipeline_results if x.get("type", "") in ["table", "text"]])
                             
-                            found_aspects = {x["aspect"] for x in extracted_results if x.get("type", "") == "table"}
-                            if "display" in found_aspects and "battery" in found_aspects and ("ram" in found_aspects or "storage" in found_aspects):
-                                has_enough_facts = True
-                                break
+                            if query_type.startswith("tech"):
+                                found_aspects = {x["aspect"] for x in extracted_results if x.get("type", "") == "table"}
+                                if "display" in found_aspects and "battery" in found_aspects:
+                                    has_enough_facts = True
+                                    break
+                            else:
+                                if len(extracted_results) > 10:
+                                    has_enough_facts = True
+                                    break
                 
                 # --- ASYNC OPINIONS CASCADE ---
-                yield f"data: {json.dumps({'step': 'processing', 'message': f'Fetching Reviews for {entity}...'})}\n\n"
-                review_query = f"{entity} review"
-                review_results = await fetch_search_results_async(review_query, num_results=5)
+                is_tech = query_type.startswith("tech")
+                review_query = f"{entity} review" if is_tech else f"{entity} opinions analysis"
+                
+                yield f"data: {json.dumps({'step': 'processing', 'message': f'Fetching Analysis for {entity}...'})}\n\n"
+                review_results = await fetch_search_results_async(review_query, num_results=5 if is_tech else 3)
                 review_urls = []
                 
                 for r in review_results:
                     url = r["url"]
                     if url not in fact_urls:
                         review_urls.append(url)
-                        yield f"data: {json.dumps({'step': 'partial', 'entity': f'{entity} Reviews', 'url': url})}\n\n"
+                        yield f"data: {json.dumps({'step': 'partial', 'entity': f'{entity} Views', 'url': url})}\n\n"
                         try:
                             import asyncio
                             pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_subjective=True)

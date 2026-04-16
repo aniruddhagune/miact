@@ -58,9 +58,25 @@ function App() {
       }
    }, [activeChat, queries]);
 
+   const handleClearCache = async () => {
+     if (!window.confirm("Are you sure you want to clear the entire local database cache? This cannot be undone.")) return;
+     try {
+       const response = await fetch("http://127.0.0.1:8000/clear-db", { method: "POST" });
+       const data = await response.json();
+       if (data.status === "success") {
+         alert("Cache cleared successfully!");
+         setQueries([]);
+         setActiveChat(0);
+       } else {
+         alert("Error clearing cache: " + data.message);
+       }
+     } catch (err) {
+       alert("Failed to connect to backend to clear cache.");
+     }
+   };
+
    useEffect(() => {
-      const handleMouseMove = (e) => {
-         if (!isResizing.current) return;
+     const handleMouseMove = (e) => {         if (!isResizing.current) return;
          let newWidth = e.clientX;
          if (newWidth < 72) newWidth = 72;
          if (newWidth > 500) newWidth = 500;
@@ -248,11 +264,10 @@ function App() {
    };
 
    useEffect(() => {
-      if (containerRef.current) {
-         containerRef.current.scrollTop = containerRef.current.scrollHeight;
-      }
-   }, [queries]);
-
+     if (containerRef.current && loading) {
+       containerRef.current.scrollTop = containerRef.current.scrollHeight;
+     }
+   }, [queries, loading]);
     const getSentimentTier = (score) => {
       if (score === null || score === undefined) return null;
       const s = Math.abs(score);
@@ -444,18 +459,28 @@ function App() {
                                  {(() => {
                                     const rows = [];
                                     const renderedAspects = new Set();
-                                    const TECH_GROUPS = {
-                                       "Dates": ["announced", "status", "released"],
-                                       "Core": ["os", "chipset", "cpu", "gpu", "platform", "system on chip"],
-                                       "Memory": ["card slot", "internal", "ram", "memory"],
-                                       "Connectivity": ["wlan", "bluetooth", "positioning", "nfc", "radio", "usb"],
-                                       "Display": ["type", "size", "resolution", "protection", "refresh rate", "screen"]
+                                    
+                                    const isTech = q.parsed?.query_type?.startsWith("tech");
+                                    
+                                    const GROUPS = isTech ? {
+                                       "Dates": ["announced", "status", "released", "release_date", "announcement_date"],
+                                       "Core": ["os", "chipset", "cpu", "gpu", "platform", "system on chip", "processor", "graphics"],
+                                       "Memory": ["card slot", "internal", "ram", "memory", "storage"],
+                                       "Connectivity": ["wlan", "bluetooth", "positioning", "nfc", "radio", "usb", "connectivity", "wi-fi", "wifi"],
+                                       "Display": ["type", "size", "resolution", "protection", "refresh rate", "screen", "display", "nits"]
+                                    } : {
+                                       "Personal Info": ["born", "died", "birth", "death", "spouse", "children", "nationality", "age"],
+                                       "Background": ["education", "alma mater", "religion", "residence", "parents"],
+                                       "Professional": ["career", "known for", "office", "political party", "occupation", "role", "years active"],
+                                       "Legal Info": ["enacted by", "date enacted", "date effective", "citation", "territorial extent", "status", "jurisdiction"],
+                                       "Works": ["books", "writings", "notable works", "publications", "awards", "achievements"]
                                     };
-                                    const groupOrder = ["Dates", "Core", "Memory", "Connectivity", "Display"];
+
+                                    const groupOrder = Object.keys(GROUPS);
 
                                     groupOrder.forEach(groupName => {
-                                       const groupKeys = TECH_GROUPS[groupName];
-                                       const matchingAspects = aspectKeys.filter(asp => groupKeys.includes(asp.toLowerCase()) && !renderedAspects.has(asp));
+                                       const groupKeys = GROUPS[groupName];
+                                       const matchingAspects = aspectKeys.filter(asp => (groupKeys.includes(asp.toLowerCase()) || asp.toLowerCase().includes(groupName.toLowerCase().split(' ')[0])) && !renderedAspects.has(asp));
                                        
                                        if (matchingAspects.length > 0) {
                                           rows.push(
@@ -499,7 +524,7 @@ function App() {
                                        rows.push(
                                           <tr key="header-other" className="spec-category-header">
                                              <td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-none">
-                                                Other
+                                                Additional Details
                                              </td>
                                           </tr>
                                        );
@@ -689,6 +714,26 @@ function App() {
                         )}
                      </div>
                   ))}
+               </div>
+
+               {/* Clear Cache Button at Bottom */}
+               <div className="p-3 border-t border-white/5 mt-auto">
+                  <button
+                     onClick={handleClearCache}
+                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-all duration-300 font-inter text-xs font-bold uppercase tracking-widest ${sidebarOpen
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                        : "text-red-500/40 hover:text-red-500"
+                        }`}
+                     title="Clear Local Database Cache"
+                  >
+                     {sidebarOpen ? (
+                        <>
+                           <span>Clear Cache</span>
+                        </>
+                     ) : (
+                        <span>&times;</span>
+                     )}
+                  </button>
                </div>
             </div>
 

@@ -301,14 +301,14 @@ def extract_attributes(sentence, domain="generic"):
 
     aspects = extract_aspects(sentence, domain=domain)
 
-    # ---- domain fallback ----
-    if domain == "generic":
-        if aspects:
-            domain = "tech"   # for now, simple rule
-
-    results.extend(extract_numeric(sentence, aspects))
+    # ---- Domain Guard ----
+    is_tech = domain.startswith("tech")
+    
+    if is_tech:
+        results.extend(extract_numeric(sentence, aspects))
+        results.extend(extract_named_values(sentence, aspects))
+    
     results.extend(extract_dates(sentence, domain))
-    results.extend(extract_named_values(sentence, aspects))
 
     # ---- Remove duplicates ----
     unique = []

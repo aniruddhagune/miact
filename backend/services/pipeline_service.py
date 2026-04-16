@@ -35,7 +35,7 @@ def is_valid_opinion(text, aspect, score, structural_info=None):
     return True
 
 
-def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False):
+def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False, fallback_text=None):
     query = parsed.get("original", "")
     domain = detect_domain(query)
 
@@ -44,12 +44,39 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
         subjects = extract_subjects(query)
 
     alias_map = build_subject_aliases(subjects)
+    
+    # Try actual scraping
     data = extract_content(url)
+
+    # ---- SCRAPING FALLBACK ----
+    # If scraping failed/blocked, use the snippet as basic text
+    if (not data or not data.get("text")) and fallback_text:
+        data = {
+            "title": "Search Summary",
+            "text": fallback_text,
+            "tables": [],
+            "opinions": [],
+            "source": url,
+            "is_snippet": True
+        }
 
     if not data:
         return None
 
     results = []
+    
+    # If it's a snippet, we'll label the aspect as "Summary" so it's visible
+    if data.get("is_snippet"):
+        for subject in subjects:
+            results.append({
+                "entity": subject,
+                "aspect": "Brief Summary",
+                "value": data["text"],
+                "type": "table",
+                "source": url
+            })
+        return results
+
     seen_objective_aspects = set()
     seen_subjective_texts = set()
 
