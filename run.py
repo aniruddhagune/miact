@@ -29,7 +29,10 @@ def run_all():
         "-m", "uvicorn",
         "backend.main:app",
         "--reload",
-        "--port", "8000"
+        "--reload-dir", "backend",      # Only watch backend code
+        "--reload-exclude", "*.log",    # Ignore log file changes
+        "--port", "8000",
+        "--loop", "none"                # Let the application set the loop policy
     ]
     
     print("📦 Launching Backend on http://127.0.0.1:8000")

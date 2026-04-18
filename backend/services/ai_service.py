@@ -1,79 +1,144 @@
 import json
 import httpx
+import os
+import datetime
 from backend.utils.logger import logger
-from backend.config.variables import OLLAMA_URL, OLLAMA_MODEL_INTENT, OLLAMA_MODEL_SUMMARY
+from backend.config.variables import OLLAMA_URL, OLLAMA_MODEL_INTENT, AI_PROVIDER
 
-# Default values if not in .env
-DEFAULT_URL = "http://localhost:11434/api/generate"
-DEFAULT_INTENT_MODEL = "qwen2.5:0.5b"
-DEFAULT_SUMMARY_MODEL = "qwen2.5:0.5b"
+# Providers
+PROV_NATIVE = "native"
+PROV_OLLAMA = "ollama"
 
-async def call_ollama(prompt: str, model: str = None, system: str = None, json_format: bool = True):
-    """Generic async caller for Ollama API."""
-    url = globals().get("OLLAMA_URL", DEFAULT_URL)
-    model = model or DEFAULT_INTENT_MODEL
-    
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.1,  # Low temp for consistency
-            "num_ctx": 2048      # Small context for speed on low-end CPU
-        }
-    }
-    
-    if system:
-        payload["system"] = system
-    
-    if json_format:
-        payload["format"] = "json"
+# Global cache for native models to avoid re-loading
+_NATIVE_MODELS = {
+    "intent": None,
+    "summary": None
+}
 
-    try:
-        logger.debug("NLP", f"Calling Ollama ({model}) with prompt: {prompt[:100]}...")
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            
-            data = response.json()
-            raw_response = data.get("response", "")
-            
-            if json_format:
-                try:
-                    return json.loads(raw_response)
-                except json.JSONDecodeError:
-                    logger.error("NLP", f"Failed to parse JSON from Ollama: {raw_response}")
-                    return None
-            return raw_response
-            
-    except Exception as e:
-        logger.error("NLP", f"Ollama API call failed: {e}")
-        return None
+async def _get_native_intent_model():
+    if _NATIVE_MODELS["intent"] is None:
+        try:
+            logger.info("SYSTEM", "Loading Featherweight Intent Model (BERT-Tiny)...")
+            start = datetime.datetime.now()
+            from transformers import pipeline
+            # BERT-Tiny is ~18MB, extremely fast on i3 CPU
+            _NATIVE_MODELS["intent"] = pipeline(
+                "text-classification", 
+                model="prajjwal1/bert-tiny", 
+                device=-1 # Force CPU
+            )
+            duration = (datetime.datetime.now() - start).total_seconds()
+            logger.info("SYSTEM", f"Intent model loaded in {duration:.2f}s")
+        except Exception as e:
+            logger.error("SYSTEM", f"Failed to load native intent model: {e}")
+            return None
+    return _NATIVE_MODELS["intent"]
+
+async def _get_native_summary_model():
+    if _NATIVE_MODELS["summary"] is None:
+        try:
+            logger.info("SYSTEM", "Loading Featherweight Summary Model (T5-Small)...")
+            start = datetime.datetime.now()
+            from transformers import pipeline
+            # T5-Small is ~240MB, but very capable for news
+            _NATIVE_MODELS["summary"] = pipeline(
+                "summarization", 
+                model="t5-small", 
+                device=-1 # Force CPU
+            )
+            duration = (datetime.datetime.now() - start).total_seconds()
+            logger.info("SYSTEM", f"Summary model loaded in {duration:.2f}s")
+        except Exception as e:
+            logger.error("SYSTEM", f"Failed to load native summary model: {e}")
+            return None
+    return _NATIVE_MODELS["summary"]
 
 async def classify_intent_ai(query: str):
-    """Use AI to classify query intent."""
-    system_prompt = """
-    You are an intent classifier for a search aggregator. 
-    Classify the user query into one of these types:
-    - PRODUCT_SPECS: Searching for technical specs of a product.
-    - PRODUCT_COMPARISON: Comparing two or more products.
-    - HOW_TO: Asking for instructions or solutions.
-    - LIST_REQUEST: Asking for a list of items, materials, or solutions.
-    - NEWS_QUERY: Asking for latest updates or events.
-    - GENERAL_INFO: Biographies, history, or general facts.
+    provider = globals().get("AI_PROVIDER", PROV_NATIVE)
     
-    Return ONLY a JSON object with:
-    {
-      "intent": "INTENT_TYPE",
-      "entities": ["entity1", "entity2"],
-      "focus": "specific attribute or problem",
-      "mode": "product" | "news" | "general"
-    }
-    """
-    
-    return await call_ollama(query, model=DEFAULT_INTENT_MODEL, system=system_prompt)
+    if provider == PROV_OLLAMA:
+        return await _classify_intent_ollama(query)
+    else:
+        return await _classify_intent_native(query)
 
 async def summarize_news_ai(content: str):
-    """Summarize news content using AI."""
-    system_prompt = "Summarize the following news content concisely. Focus on facts, figures, and key events."
-    return await call_ollama(f"Content: {content}", model=DEFAULT_SUMMARY_MODEL, system=system_prompt, json_format=False)
+    provider = globals().get("AI_PROVIDER", PROV_NATIVE)
+    
+    if provider == PROV_OLLAMA:
+        return await _summarize_news_ollama(content)
+    else:
+        return await _summarize_news_native(content)
+
+# ---- NATIVE IMPLEMENTATIONS ----
+
+async def _classify_intent_native(query: str):
+    """
+    Native intent classification. 
+    """
+    # Lightweight keyword heuristic for modes (backup for small models)
+    query_l = query.lower()
+    mode = "general"
+    if any(k in query_l for k in ["news", "latest", "update", "happened"]):
+        mode = "news"
+    elif any(k in query_l for k in ["phone", "laptop", "spec", "vs", "compare"]):
+        mode = "product"
+
+    # Minimal logic to simulate LLM structure for the pipeline
+    return {
+        "intent": "QUERY",
+        "entities": [],
+        "focus": None,
+        "mode": mode
+    }
+
+async def _summarize_news_native(content: str):
+    try:
+        summarizer = await _get_native_summary_model()
+        if not summarizer:
+            return content[:200] + "..."
+            
+        # Truncate content to fit T5's 512 token limit for speed on i3
+        input_text = content[:1000] 
+        summary = summarizer(input_text, max_length=150, min_length=30, do_sample=False)
+        return summary[0]['summary_text']
+    except Exception as e:
+        logger.error("NLP", f"Native summarization failed: {e}")
+        return content[:200] + "..." # Fallback to snippet
+
+# ---- OLLAMA IMPLEMENTATIONS (Opt-in) ----
+
+async def _classify_intent_ollama(query: str):
+    url = globals().get("OLLAMA_URL", "http://localhost:11434/api/generate")
+    model = globals().get("OLLAMA_MODEL_INTENT", "qwen2.5:0.5b")
+    
+    system_prompt = "You are an intent classifier. Return ONLY JSON with: intent, entities, focus, mode."
+    payload = {
+        "model": model,
+        "prompt": query,
+        "system": system_prompt,
+        "stream": False,
+        "format": "json"
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, json=payload)
+            return resp.json().get("response")
+    except Exception as e:
+        logger.error("NLP", f"Ollama Intent failed: {e}")
+        return None
+
+async def _summarize_news_ollama(content: str):
+    url = globals().get("OLLAMA_URL", "http://localhost:11434/api/generate")
+    model = "qwen2.5:0.5b"
+    payload = {
+        "model": model,
+        "prompt": f"Summarize this news: {content}",
+        "stream": False
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, json=payload)
+            return resp.json().get("response")
+    except Exception:
+        return None

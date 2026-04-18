@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 import json
+import datetime
 from backend.services.search_service import fetch_search_results_async
 from backend.services.query_parser import parse_query
 from backend.domains.tech import get_trusted_domains as get_tech_domains
@@ -50,15 +51,22 @@ def clear_db():
 
 @router.get("/search")
 async def search(query: str, t: str = None):
-    logger.info("SEARCH", f"Received search request: '{query}'")
+    logger.info("SEARCH", f"New Request: '{query}'")
+    
+    # Track performance
+    start_time = datetime.datetime.now()
+    
+    logger.info("SEARCH", "Starting query parsing...")
     parsed = parse_query(query)
+    logger.info("SEARCH", "Query parsed successfully")
     
     # ---- AI ENHANCED INTENT ----
     try:
         from backend.services.ai_service import classify_intent_ai
+        logger.debug("NLP", f"Attempting AI Intent Classification for: {query}")
         ai_intent = await classify_intent_ai(query)
         if ai_intent:
-            logger.info("SEARCH", f"AI Intent Detection: {ai_intent.get('intent')}")
+            logger.info("SEARCH", f"AI Intent: {ai_intent.get('intent')} | Mode: {ai_intent.get('mode')}")
             # Merge AI insights into parsed object
             parsed["ai_intent"] = ai_intent.get("intent")
             parsed["ai_focus"] = ai_intent.get("focus")
@@ -66,25 +74,26 @@ async def search(query: str, t: str = None):
                 parsed["entities"] = ai_intent.get("entities")
             if ai_intent.get("mode"):
                 parsed["mode"] = ai_intent.get("mode")
+        else:
+            logger.warning("NLP", "AI Intent Classification returned no data, falling back to heuristics.")
     except Exception as e:
         logger.error("SEARCH", f"AI Intent Detection failed: {e}")
-
-    logger.debug("SEARCH", f"Parsed query data", data=parsed)
 
     async def event_generator():
         yield f"data: {json.dumps({'step': 'parsed', 'parsed': parsed})}\n\n"
 
         # ---- STEP 1: CHECK DATABASE ----
-        logger.info("SEARCH", "Checking database for cached results...")
+        logger.info("DATABASE", f"Checking cache for entities: {parsed.get('entities')}")
         db_results = fetch_from_db(parsed)
 
         # ---- STEP 2: INTELLIGENT DB CHECK ----
         use_db = len(db_results["data"]) > 0
 
         if use_db:
-            logger.info("SEARCH", f"Found {len(db_results['data'])} cached results in database.")
+            logger.info("DATABASE", f"Cache Hit: Found {len(db_results['data'])} records.")
             grouped_db_results = {}
             db_urls = {}
+            # ... (rest of DB logic is good)
             
             for item in db_results["data"]:
                 ent = item.get("entity", "global")

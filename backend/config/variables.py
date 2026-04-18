@@ -22,7 +22,11 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "t")
 # If empty or "*", all services are logged.
 DEBUG_SERVICES = os.getenv("MIACT_SERVICES", "*").upper().split(",")
 
+# Whether to log all services to the file regardless of selected console services
+LOG_ALL_TO_FILE = os.getenv("MIACT_LOG_ALL", "True").lower() in ("true", "1", "t")
+
 # ── AI / Ollama ───────────────────────────────────────────────
+AI_PROVIDER = os.getenv("AI_PROVIDER", "native") # "native" or "ollama"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL_INTENT = os.getenv("OLLAMA_MODEL_INTENT", "qwen2.5:0.5b")
 OLLAMA_MODEL_SUMMARY = os.getenv("OLLAMA_MODEL_SUMMARY", "qwen2.5:0.5b")

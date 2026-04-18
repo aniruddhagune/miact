@@ -38,23 +38,25 @@ def is_valid_opinion(text, aspect, score, structural_info=None):
 
 
 async def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False, fallback_text=None):
-    logger.info("PIPELINE", f"Processing URL: {url}")
+    logger.info("PIPELINE", f"Start: {url}")
     query = parsed.get("original", "")
     domain = detect_domain(query)
 
     subjects = parsed.get("entities", [])
     if not subjects:
         subjects = extract_subjects(query)
+    
+    logger.debug("PIPELINE", f"Entities: {subjects} | Domain: {domain}")
 
     alias_map = build_subject_aliases(subjects)
     
     # Try actual scraping
+    logger.debug("PIPELINE", f"Dispatching extraction for: {url}")
     data = await extract_content(url)
 
     # ---- SCRAPING FALLBACK ----
-    # If scraping failed/blocked, use the snippet as basic text
     if (not data or not data.get("text")) and fallback_text:
-        logger.warning("PIPELINE", f"Scraping failed for {url}. Using fallback snippet.")
+        logger.warning("PIPELINE", f"Live Scraping FAILED/BLOCKED for {url}. Using search snippet fallback.")
         data = {
             "title": "Search Summary",
             "text": fallback_text,
@@ -65,14 +67,16 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
         }
 
     if not data:
-        logger.error("PIPELINE", f"Extraction failed for {url}")
+        logger.error("PIPELINE", f"Extraction failed completely for {url}")
         return None
+
+    logger.debug("PIPELINE", f"Successfully retrieved {len(data.get('text', ''))} chars from {url}")
 
     results = []
     
     # If it's a snippet, we'll label the aspect as "Summary" so it's visible
     if data.get("is_snippet"):
-        logger.debug("PIPELINE", "Using snippet fallback results")
+        logger.debug("PIPELINE", "Processing as Snippet Fallback")
         for subject in subjects:
             results.append({
                 "entity": subject,
@@ -87,7 +91,9 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
     seen_subjective_texts = set()
 
     tables = data.get("tables", []) if not only_subjective else []
-    logger.debug("PIPELINE", f"Found {len(tables)} table entries")
+    if tables:
+        logger.info("PIPELINE", f"Processing {len(tables)} table entries from {url}")
+    
     for row in tables:
         parsed_numeric = parse_table_numeric(row["value"])
         final_value = parsed_numeric["value"] if parsed_numeric else row["value"]
@@ -112,7 +118,7 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
                 any(d in url.lower() for d in ["gsmarena.com", "theverge.com", "engadget.com"])
 
     sentences = split_into_sentences(clean_text(data.get("text", "")))
-    logger.debug("PIPELINE", f"Analyzing {len(sentences)} sentences for opinions")
+    logger.debug("PIPELINE", f"Analyzing {len(sentences)} sentences for opinions in {url}")
     
     for s in sentences:
         parts = split_comparison(s)
@@ -155,7 +161,7 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
     if not only_objective:
         gsma_ops = data.get("opinions", [])
         if gsma_ops:
-            logger.debug("PIPELINE", f"Processing {len(gsma_ops)} site-extracted opinions")
+            logger.debug("PIPELINE", f"Processing {len(gsma_ops)} site-extracted opinions from {url}")
         for op in gsma_ops:
             op_text = op["text"]
             sentiment_aspects = analyze_aspect_sentiment(op_text, domain)
@@ -184,5 +190,5 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
                         "metadata": {"user_review": True, "is_professional": False}
                     })
 
-    logger.info("PIPELINE", f"Finished {url}. Total items: {len(results)}")
+    logger.info("PIPELINE", f"Finished: {url} | Found {len(results)} total items.")
     return results

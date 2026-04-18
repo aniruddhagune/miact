@@ -1,0 +1,19 @@
+fastapi
+uvicorn
+psycopg2-binary
+python-dotenv
+beautifulsoup4
+requests
+newspaper3k
+spacy
+vaderSentiment
+trafilatura
+playwright
+duckduckgo_search
+pandas
+lxml
+lxml_html_clean
+transformers
+torch --index-url https://download.pytorch.org/whl/cpu
+onnxruntime
+optimum[onnxruntime]

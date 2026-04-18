@@ -5,6 +5,7 @@ from backend.extractors.site_extractors.generic import extract as generic_extrac
 from backend.extractors.fallback_scraper import extract_dense_text
 from backend.services.playwright_service import scrape_dynamic
 import asyncio
+import traceback
 
 
 async def extract_content(url: str):
@@ -81,7 +82,7 @@ async def extract_content(url: str):
         if dynamic_result and len(dynamic_result.get("text", "")) > 500:
             return dynamic_result
     except Exception as e:
-        logger.error("EXTRACTOR", f"Playwright dynamic scrape failed: {e}")
+        logger.error("EXTRACTOR", f"Playwright dynamic scrape failed for {url}: {e}\n{traceback.format_exc()}")
 
     # ---- LAST RESORT: Generic BeautifulSoup ----
     logger.debug("EXTRACTOR", "Falling back to generic BeautifulSoup scraper")

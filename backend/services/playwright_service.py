@@ -1,4 +1,6 @@
 import asyncio
+import traceback
+import sys
 from playwright.async_api import async_playwright
 from backend.utils.logger import logger
 
@@ -13,10 +15,22 @@ class PlaywrightService:
         return cls._instance
 
     async def start(self):
+        # On Windows, create_subprocess_exec requires ProactorEventLoop
+        if sys.platform == 'win32':
+            try:
+                if not isinstance(asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy):
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            except Exception as e:
+                logger.debug("SCRAPER", f"Could not set ProactorEventLoopPolicy: {e}")
+
         if not self.browser:
-            self.playwright = await async_playwright().start()
-            self.browser = await self.playwright.chromium.launch(headless=True)
-            logger.info("SCRAPER", "Playwright browser launched successfully")
+            try:
+                self.playwright = await async_playwright().start()
+                self.browser = await self.playwright.chromium.launch(headless=True)
+                logger.info("SCRAPER", "Playwright browser launched successfully")
+            except Exception as e:
+                logger.error("SCRAPER", f"Failed to start Playwright: {e}\n{traceback.format_exc()}")
+                raise
 
     async def stop(self):
         if self.browser:
@@ -29,7 +43,11 @@ class PlaywrightService:
         """
         Scrape a URL using Playwright for dynamic content.
         """
-        await self.start()
+        try:
+            await self.start()
+        except Exception:
+            return None
+
         page = await self.browser.new_page()
         try:
             logger.debug("SCRAPER", f"Playwright navigating to: {url}")
@@ -51,7 +69,7 @@ class PlaywrightService:
                 "source": url
             }
         except Exception as e:
-            logger.error("SCRAPER", f"Playwright failed for {url}: {e}")
+            logger.error("SCRAPER", f"Playwright failed for {url}: {e}\n{traceback.format_exc()}")
             return None
         finally:
             await page.close()

@@ -63,11 +63,16 @@ def group_variants_and_persist(results_dict: dict, ai_summary: str = None):
         try:
             ent_id = get_or_create_entity("AI Insight")
             # We use a dummy URL for AI generated content if no source is directly applicable
+            dummy_url = "ai://executive-summary"
+            source_id = get_or_create_source(dummy_url)
+            create_document_if_not_exists(dummy_url, source_id)
+            
             insert_attribute(
                 entity_id=ent_id,
-                document_id="ai://executive-summary",
+                document_id=dummy_url,
                 aspect="Summary",
                 value=ai_summary,
+                unit=None,
                 attr_type="text",
                 confidence_score=2.0
             )

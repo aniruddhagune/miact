@@ -1,7 +1,35 @@
+# Environments
 venv/
-context/
-*__pycache__*
+.env
+.venv
+env/
+node_modules/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
 *.old
-*.pyc
 *.zip
-*.txt
+
+# MIACT Logs & Debug
+backend/debug/*.log
+backend/debug/session_*
+error.log
+
+# Playwright & Browsers
+.auth/
+user_data/
+pw-browsers/
+
+# AI Models & Cache
+.cache/
+models/
+huggingface/
+transformers/
+
+# Database / OS
+*.db
+*.sqlite
+.DS_Store
+Thumbs.db
