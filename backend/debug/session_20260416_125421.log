@@ -1,0 +1,229 @@
+{"timestamp": "2026-04-16 12:54:21", "level": "INFO", "service": "GLOBAL", "message": "Logger initialized. New session started."}
+{"timestamp": "2026-04-16 12:54:31", "level": "INFO", "service": "SYSTEM", "message": "MIACT Backend starting up..."}
+{"timestamp": "2026-04-16 12:54:31", "level": "INFO", "service": "DATABASE", "message": "Initializing database schema..."}
+{"timestamp": "2026-04-16 12:54:31", "level": "INFO", "service": "DATABASE", "message": "Database schema initialized successfully."}
+{"timestamp": "2026-04-16 12:54:33", "level": "INFO", "service": "SEARCH", "message": "Database cache cleared manually via API."}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Received search request: 'oneplus 9'"}
+{"timestamp": "2026-04-16 12:54:50", "level": "DEBUG", "service": "PARSER", "message": "Parsing query: 'oneplus 9'"}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "PARSER", "message": "Parsed: mode=product, type=simple, entities=['oneplus 9'], attr=None"}
+{"timestamp": "2026-04-16 12:54:50", "level": "DEBUG", "service": "SEARCH", "message": "Parsed query data", "data": {"mode": "product", "type": "simple", "original": "oneplus 9", "entities": ["oneplus 9"], "attribute": null, "filter": null, "source": null}}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Checking database for cached results..."}
+{"timestamp": "2026-04-16 12:54:50", "level": "DEBUG", "service": "DATABASE", "message": "Fetching results from database cache", "data": {"entities": ["oneplus 9"]}}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "DATABASE", "message": "Cache lookup complete. Found 0 records."}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "No cache found. Proceeding to web search."}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Inferred query type: tech_phone"}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Fact cascade domains: ['gsmarena.com', 'wikipedia.org', 'devicespecifications.com']"}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Processing entity: oneplus 9"}
+{"timestamp": "2026-04-16 12:54:50", "level": "DEBUG", "service": "SEARCH", "message": "Searching facts for 'oneplus 9' on gsmarena.com"}
+{"timestamp": "2026-04-16 12:54:50", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'oneplus 9 site:gsmarena.com'", "data": {"num_results": 2, "trusted": null}}
+{"timestamp": "2026-04-16 12:54:50", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'oneplus 9 site:gsmarena.com'"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 2"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 - Full phone specifications - ...': 1.05"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 review - GSMArena.com tests...': 1.05"}
+{"timestamp": "2026-04-16 12:54:54", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 2"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://www.gsmarena.com/oneplus_9-10747.php"}
+{"timestamp": "2026-04-16 12:54:54", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.gsmarena.com/oneplus_9-10747.php"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.gsmarena.com/oneplus_9-10747.php"}
+{"timestamp": "2026-04-16 12:54:54", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to GSMArena Specs extractor"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "PIPELINE", "message": "Found 46 table entries"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 0 sentences for opinions"}
+{"timestamp": "2026-04-16 12:54:56", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.gsmarena.com/oneplus_9-10747.php. Total items: 45"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 45 facts from https://www.gsmarena.com/oneplus_9-10747.php"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://www.gsmarena.com/oneplus_9-review-2240.php"}
+{"timestamp": "2026-04-16 12:54:56", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.gsmarena.com/oneplus_9-review-2240.php"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.gsmarena.com/oneplus_9-review-2240.php"}
+{"timestamp": "2026-04-16 12:54:56", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-16 12:54:58", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted 5598 chars via newspaper"}
+{"timestamp": "2026-04-16 12:54:58", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:54:58", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 55 sentences for opinions"}
+{"timestamp": "2026-04-16 12:54:58", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.gsmarena.com/oneplus_9-review-2240.php. Total items: 0"}
+{"timestamp": "2026-04-16 12:54:58", "level": "DEBUG", "service": "SEARCH", "message": "Searching facts for 'oneplus 9' on wikipedia.org"}
+{"timestamp": "2026-04-16 12:54:58", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'oneplus 9 site:wikipedia.org'", "data": {"num_results": 2, "trusted": null}}
+{"timestamp": "2026-04-16 12:54:58", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'oneplus 9 site:wikipedia.org'"}
+{"timestamp": "2026-04-16 12:55:00", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 2"}
+{"timestamp": "2026-04-16 12:55:00", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 - Wikipedia...': 0.95"}
+{"timestamp": "2026-04-16 12:55:00", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 1"}
+{"timestamp": "2026-04-16 12:55:00", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://en.wikipedia.org/wiki/OnePlus_9"}
+{"timestamp": "2026-04-16 12:55:00", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://en.wikipedia.org/wiki/OnePlus_9"}
+{"timestamp": "2026-04-16 12:55:00", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://en.wikipedia.org/wiki/OnePlus_9"}
+{"timestamp": "2026-04-16 12:55:00", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to Wikipedia extractor"}
+{"timestamp": "2026-04-16 12:55:03", "level": "DEBUG", "service": "PIPELINE", "message": "Found 26 table entries"}
+{"timestamp": "2026-04-16 12:55:03", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 35 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:03", "level": "INFO", "service": "PIPELINE", "message": "Finished https://en.wikipedia.org/wiki/OnePlus_9. Total items: 28"}
+{"timestamp": "2026-04-16 12:55:03", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 28 facts from https://en.wikipedia.org/wiki/OnePlus_9"}
+{"timestamp": "2026-04-16 12:55:03", "level": "INFO", "service": "SEARCH", "message": "Enough facts found for oneplus 9 from wikipedia.org"}
+{"timestamp": "2026-04-16 12:55:03", "level": "INFO", "service": "SEARCH", "message": "Fetching opinions for 'oneplus 9' with query: 'oneplus 9 review'"}
+{"timestamp": "2026-04-16 12:55:03", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'oneplus 9 review'", "data": {"num_results": 5, "trusted": null}}
+{"timestamp": "2026-04-16 12:55:03", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'oneplus 9 review'"}
+{"timestamp": "2026-04-16 12:55:05", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 5"}
+{"timestamp": "2026-04-16 12:55:05", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'The Lab - OnePlus 9 Review...': 1.3"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 Cell Phone Review - Consumer R...': 1.1"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 - User opinions and reviews...': 1.3"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 review: Power reloaded! - Digi...': 1.3"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "NLP", "message": "Relevance Score for 'OnePlus 9 Review - OnePlus (India)...': 1.3"}
+{"timestamp": "2026-04-16 12:55:06", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 5"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://community.oneplus.com/thread/1407405"}
+{"timestamp": "2026-04-16 12:55:06", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://community.oneplus.com/thread/1407405"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://community.oneplus.com/thread/1407405"}
+{"timestamp": "2026-04-16 12:55:06", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-16 12:55:08", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-16 12:55:08", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://community.oneplus.com/thread/1407405"}
+{"timestamp": "2026-04-16 12:55:10", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting manual p/span fallback"}
+{"timestamp": "2026-04-16 12:55:13", "level": "INFO", "service": "EXTRACTOR", "message": "Attempting dynamic scrape via Playwright for: https://community.oneplus.com/thread/1407405"}
+{"timestamp": "2026-04-16 12:55:13", "level": "ERROR", "service": "EXTRACTOR", "message": "Playwright dynamic scrape failed: "}
+{"timestamp": "2026-04-16 12:55:13", "level": "DEBUG", "service": "EXTRACTOR", "message": "Falling back to generic BeautifulSoup scraper"}
+{"timestamp": "2026-04-16 12:55:15", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:55:15", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 0 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:15", "level": "INFO", "service": "PIPELINE", "message": "Finished https://community.oneplus.com/thread/1407405. Total items: 0"}
+{"timestamp": "2026-04-16 12:55:15", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/"}
+{"timestamp": "2026-04-16 12:55:15", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/"}
+{"timestamp": "2026-04-16 12:55:15", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/"}
+{"timestamp": "2026-04-16 12:55:15", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-16 12:55:18", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted 3272 chars via newspaper"}
+{"timestamp": "2026-04-16 12:55:18", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:55:18", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 41 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:18", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/. Total items: 0"}
+{"timestamp": "2026-04-16 12:55:18", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://www.gsmarena.com/oneplus_9-reviews-10747.php"}
+{"timestamp": "2026-04-16 12:55:18", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.gsmarena.com/oneplus_9-reviews-10747.php"}
+{"timestamp": "2026-04-16 12:55:18", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.gsmarena.com/oneplus_9-reviews-10747.php"}
+{"timestamp": "2026-04-16 12:55:18", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to GSMArena Specs extractor"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 0 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "PIPELINE", "message": "Processing 20 site-extracted opinions"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Anonymous, 03 Dec 2025 is this still mainable ente...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Anonymous, 03 Dec 2025 is this still mainable ente...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Anonymous, 03 Dec 2025 is this still mai...' -> aspects={'perofrmance', 'price', 'anonymous', 'phone'}, sentiment=negative, score=-0.333"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Anonymous, 03 Dec 2025 is this still mainable ente...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Anonymous, 03 Dec 2025 is this still mainable ente...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Anonymous, 03 Dec 2025 is this still mai...' -> aspects={'price', 'anonymous'}, sentiment=negative, score=-0.333"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Camera sensors are better than Oneplus 15 except n...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Camera sensors are better than Oneplus 15 except n...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Camera sensors are better than Oneplus 1...' -> aspects={'lens', 'sensors', 'oneplus'}, sentiment=neutral, score=0.178"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'is this still mainable entering 2026?? i found a r...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'is this still mainable entering 2026?? i found a r...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.233, complete=question"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'is this still mainable entering 2026?? i...' -> aspects={'price'}, sentiment=negative, score=-0.233"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Agree, same issue here. Thanks...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Agree, same issue here. Thanks...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.333, complete=incomplete"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Agree, same issue here. Thanks...' -> aspects={'issue'}, sentiment=negative, score=-0.333"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'issues', 'iam', 'device', 'life', 'issue', 'phone'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:20", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: '1 year in, 1st green line. and every 2 months or b...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: '1 year in, 1st green line. and every 2 months or b...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: '1 year in, 1st green line. and every 2 m...' -> aspects={'lines', 'line', 'screen', 'oneplus'}, sentiment=neutral, score=0.000"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Have this phone for about 3.5 years now and I stil...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Have this phone for about 3.5 years now and I stil...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Have this phone for about 3.5 years now ...' -> aspects={'years', 'games', 'phone', 'aspect'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'using it for multimedia, pictures and what phones ...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'using it for multimedia, pictures and wh...' -> aspects={'cake', 'cherry', 'multimedia', 'phone', 'esim'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Anonymous, 07 Aug 2025 Disappointing Long-Term Exp...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Anonymous, 07 Aug 2025 Disappointing Long-Term Exp...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.667, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Anonymous, 07 Aug 2025 Disappointing Lon...' -> aspects={'years', 'issue', 'phone'}, sentiment=negative, score=-0.667"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Disappointing Long-Term Experience I used this pho...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Disappointing Long-Term Experience I used this pho...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.667, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Disappointing Long-Term Experience I use...' -> aspects={'motherboard', 'performance', 'line', 'device', 'screen', 'months', 'things', 'costs', 'decision', 'pkr', 'complaint', 'experience', 'repair', 'lines', 'pattern', 'turn', 'phone', 'gaming', 'issue', 'cost', 'summary', 'power', 'value', 'concern', 'quality', 'years', 'repairs'}, sentiment=positive, score=0.667"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'TRASH PHONE. Don\u2019t waste your time, money, or effo...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'TRASH PHONE. Don\u2019t waste your time, money, or effo...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.667, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'TRASH PHONE. Don\u2019t waste your time, mone...' -> aspects={'beginning', 'gaming', 'time', 'years', 'phone'}, sentiment=positive, score=0.667"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'then, one random night, I got a beautiful, amazing...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=1.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'then, one random night, I got a beautifu...' -> aspects={'lines', 'mistake', 'zero', 'motherboard', 'sun', 'value', 'phone', 'issues', 'miracle', 'line', 'birth', 'pkr', 'time', 'devices', 'repair', 'days', 'shit'}, sentiment=positive, score=1.000"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'lines', 'issues', 'screen', 'phone', 'middle'}, sentiment=negative, score=0.103"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=negative, score=-0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'issues', 'phone'}, sentiment=negative, score=-0.333"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:21", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'months', 'issues', 'battery', 'lot', 'years', 'phone'}, sentiment=negative, score=0.221"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'shape', 'things', 'issues', 'device', 'years', 'phone'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Anonymous, 23 Dec 2024 i just got the oneplus 9 5g...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Anonymous, 23 Dec 2024 i just got the oneplus 9 5g...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.233, complete=question"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Anonymous, 23 Dec 2024 i just got the on...' -> aspects={'issues', 'condition', 'oneplus', 'ebay', 'phone'}, sentiment=positive, score=0.233"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'TomTomazack, 26 Feb 2024 I've owned mine for almos...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'TomTomazack, 26 Feb 2024 I've owned mine for almos...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'TomTomazack, 26 Feb 2024 I've owned mine...' -> aspects={'tomtomazack', 'health', 'mine', 'purchas', 'oneplus', 'years'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'For me this is a very good phone !...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'For me this is a very good phone !...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.373, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'For me this is a very good phone !...' -> aspects={'phone'}, sentiment=positive, score=0.373"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Anonymous, 25 Jan 2024 After owning the phone for ...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Anonymous, 25 Jan 2024 After owning the phone for ...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Anonymous, 25 Jan 2024 After owning the ...' -> aspects={'spouses', 'anonymous', 'phone', 'years'}, sentiment=positive, score=0.667"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'she loves the phone. I wouldn't call her a power u...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'she loves the phone. I wouldn't call her...' -> aspects={'phone'}, sentiment=positive, score=0.572"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'she definitely puts a decent amount on tim on it d...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'she definitely puts a decent amount on t...' -> aspects={'tim', 'wood', 'amount'}, sentiment=positive, score=0.402"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'no green line for her yet either. The Snapdragon i...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.333, complete=complete"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'no green line for her yet either. The Sn...' -> aspects={'snapdragon', 'phone'}, sentiment=positive, score=0.333"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'Rage, 07 Jan 2025 Would recommend you to keep your...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'Rage, 07 Jan 2025 Would recommend you to keep your...'"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=positive, score=0.233, complete=question"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "NLP", "message": "Analyzed part: 'Rage, 07 Jan 2025 Would recommend you to...' -> aspects={'issues', 'minimum', 'jan', 'time', 'fan', 'pubg'}, sentiment=positive, score=0.233"}
+{"timestamp": "2026-04-16 12:55:22", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.gsmarena.com/oneplus_9-reviews-10747.php. Total items: 23"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 23 opinions from https://www.gsmarena.com/oneplus_9-reviews-10747.php"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://www.digitalcitizen.life/oneplus-9-review/"}
+{"timestamp": "2026-04-16 12:55:22", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.digitalcitizen.life/oneplus-9-review/"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.digitalcitizen.life/oneplus-9-review/"}
+{"timestamp": "2026-04-16 12:55:22", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-16 12:55:24", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-16 12:55:24", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://www.digitalcitizen.life/oneplus-9-review/"}
+{"timestamp": "2026-04-16 12:55:25", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting manual p/span fallback"}
+{"timestamp": "2026-04-16 12:55:26", "level": "INFO", "service": "EXTRACTOR", "message": "Attempting dynamic scrape via Playwright for: https://www.digitalcitizen.life/oneplus-9-review/"}
+{"timestamp": "2026-04-16 12:55:26", "level": "ERROR", "service": "EXTRACTOR", "message": "Playwright dynamic scrape failed: "}
+{"timestamp": "2026-04-16 12:55:26", "level": "DEBUG", "service": "EXTRACTOR", "message": "Falling back to generic BeautifulSoup scraper"}
+{"timestamp": "2026-04-16 12:55:27", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:55:27", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 0 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:27", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.digitalcitizen.life/oneplus-9-review/. Total items: 0"}
+{"timestamp": "2026-04-16 12:55:27", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://www.oneplus.in/9/reviews"}
+{"timestamp": "2026-04-16 12:55:27", "level": "INFO", "service": "PIPELINE", "message": "Processing URL: https://www.oneplus.in/9/reviews"}
+{"timestamp": "2026-04-16 12:55:27", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.oneplus.in/9/reviews"}
+{"timestamp": "2026-04-16 12:55:27", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-16 12:55:29", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-16 12:55:29", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://www.oneplus.in/9/reviews"}
+{"timestamp": "2026-04-16 12:55:31", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting manual p/span fallback"}
+{"timestamp": "2026-04-16 12:55:32", "level": "INFO", "service": "EXTRACTOR", "message": "Attempting dynamic scrape via Playwright for: https://www.oneplus.in/9/reviews"}
+{"timestamp": "2026-04-16 12:55:32", "level": "ERROR", "service": "EXTRACTOR", "message": "Playwright dynamic scrape failed: "}
+{"timestamp": "2026-04-16 12:55:32", "level": "DEBUG", "service": "EXTRACTOR", "message": "Falling back to generic BeautifulSoup scraper"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "PIPELINE", "message": "Found 0 table entries"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "PIPELINE", "message": "Analyzing 2 sentences for opinions"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: '{{user.signedIn ?...'"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: '{{user.signedIn ?...'"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=question"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Skipping neutral question: '{{user.signedIn ?'"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Mapping aspect-sentiment for: 'user.name : searchData.welcome}} {{searchData.sign...'"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Analyzing clause structure: 'user.name : searchData.welcome}} {{searchData.sign...'"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "NLP", "message": "Clause classification: sentiment=neutral, score=0.0, complete=incomplete"}
+{"timestamp": "2026-04-16 12:55:33", "level": "INFO", "service": "PIPELINE", "message": "Finished https://www.oneplus.in/9/reviews. Total items: 0"}
+{"timestamp": "2026-04-16 12:55:33", "level": "INFO", "service": "PROCESSING", "message": "Grouping variants and persisting for 1 entities"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "PROCESSING", "message": "Processing 96 items for oneplus 9"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "PROCESSING", "message": "Calculating scores from 23 opinions"}
+{"timestamp": "2026-04-16 12:55:33", "level": "DEBUG", "service": "PROCESSING", "message": "Persisting 80 attributes to database"}
+{"timestamp": "2026-04-16 12:56:06", "level": "INFO", "service": "PROCESSING", "message": "All entities processed and persisted"}
+{"timestamp": "2026-04-16 12:56:06", "level": "INFO", "service": "SEARCH", "message": "Search completed successfully."}
+{"timestamp": "2026-04-16 12:58:49", "level": "INFO", "service": "SYSTEM", "message": "MIACT Backend shutting down..."}

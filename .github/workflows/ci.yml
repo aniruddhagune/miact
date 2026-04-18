@@ -1,0 +1,49 @@
+name: MIACT CI
+
+on:
+  push:
+    branches: [ main, d-work ]
+  pull_request:
+    branches: [ main, d-work ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+        python -m spacy download en_core_web_md
+        
+    - name: Run Pytest
+      run: |
+        # Run a subset of non-DB tests for CI baseline
+        pytest backend/tests/check_spacy.py backend/tests/test_grammar_rules.py
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: npm install
+      cwd: frontend
+      
+    - name: Lint
+      run: npm run lint
+      cwd: frontend

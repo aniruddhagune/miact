@@ -1,0 +1,111 @@
+{"timestamp": "2026-04-18 22:53:54", "level": "INFO", "service": "GLOBAL", "message": "Logger initialized. New session started."}
+{"timestamp": "2026-04-18 22:54:11", "level": "INFO", "service": "SYSTEM", "message": "MIACT Backend starting up..."}
+{"timestamp": "2026-04-18 22:54:11", "level": "INFO", "service": "DATABASE", "message": "Initializing database schema..."}
+{"timestamp": "2026-04-18 22:54:13", "level": "INFO", "service": "DATABASE", "message": "Database schema initialized successfully."}
+{"timestamp": "2026-04-18 22:54:26", "level": "INFO", "service": "SEARCH", "message": "Database cache cleared manually via API."}
+{"timestamp": "2026-04-18 22:57:00", "level": "INFO", "service": "SEARCH", "message": "Received search request: 'Mahatma Gandhi'"}
+{"timestamp": "2026-04-18 22:57:00", "level": "DEBUG", "service": "PARSER", "message": "Parsing query: 'Mahatma Gandhi'"}
+{"timestamp": "2026-04-18 22:57:00", "level": "INFO", "service": "PARSER", "message": "Parsed: mode=product, type=simple, entities=['mahatma gandhi'], attr=None"}
+{"timestamp": "2026-04-18 22:57:00", "level": "DEBUG", "service": "SEARCH", "message": "Parsed query data", "data": {"mode": "product", "type": "simple", "original": "Mahatma Gandhi", "entities": ["mahatma gandhi"], "attribute": null, "filter": null, "source": null}}
+{"timestamp": "2026-04-18 22:57:00", "level": "INFO", "service": "SEARCH", "message": "Checking database for cached results..."}
+{"timestamp": "2026-04-18 22:57:01", "level": "INFO", "service": "SEARCH", "message": "No cache found. Proceeding to web search."}
+{"timestamp": "2026-04-18 22:57:01", "level": "INFO", "service": "SEARCH", "message": "Inferred query type: general"}
+{"timestamp": "2026-04-18 22:57:01", "level": "INFO", "service": "SEARCH", "message": "Fact cascade domains: ['wikipedia.org']"}
+{"timestamp": "2026-04-18 22:57:01", "level": "INFO", "service": "SEARCH", "message": "Processing entity: mahatma gandhi"}
+{"timestamp": "2026-04-18 22:57:01", "level": "DEBUG", "service": "SEARCH", "message": "Searching facts for 'mahatma gandhi' on wikipedia.org"}
+{"timestamp": "2026-04-18 22:57:01", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'mahatma gandhi site:wikipedia.org'", "data": {"num_results": 2, "trusted": null}}
+{"timestamp": "2026-04-18 22:57:01", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'mahatma gandhi site:wikipedia.org'"}
+{"timestamp": "2026-04-18 22:57:05", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 2"}
+{"timestamp": "2026-04-18 22:57:05", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 2"}
+{"timestamp": "2026-04-18 22:57:05", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://en.wikipedia.org/wiki/Mahatma_Gandhi"}
+{"timestamp": "2026-04-18 22:57:05", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://en.wikipedia.org/wiki/Mahatma_Gandhi"}
+{"timestamp": "2026-04-18 22:57:05", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to Wikipedia extractor"}
+{"timestamp": "2026-04-18 22:57:08", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 16 facts from https://en.wikipedia.org/wiki/Mahatma_Gandhi"}
+{"timestamp": "2026-04-18 22:57:08", "level": "INFO", "service": "SEARCH", "message": "Enough facts found for mahatma gandhi from wikipedia.org"}
+{"timestamp": "2026-04-18 22:57:08", "level": "INFO", "service": "SEARCH", "message": "Fetching opinions for 'mahatma gandhi' with query: 'mahatma gandhi opinions analysis'"}
+{"timestamp": "2026-04-18 22:57:08", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'mahatma gandhi opinions analysis'", "data": {"num_results": 3, "trusted": null}}
+{"timestamp": "2026-04-18 22:57:08", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'mahatma gandhi opinions analysis'"}
+{"timestamp": "2026-04-18 22:57:13", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 3"}
+{"timestamp": "2026-04-18 22:57:13", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 3"}
+{"timestamp": "2026-04-18 22:57:13", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://listverse.com/2014/10/31/10-curious-controversies-about-mahatma-gandhi/"}
+{"timestamp": "2026-04-18 22:57:13", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://listverse.com/2014/10/31/10-curious-controversies-about-mahatma-gandhi/"}
+{"timestamp": "2026-04-18 22:57:13", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-18 22:57:14", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-18 22:57:14", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://listverse.com/2014/10/31/10-curious-controversies-about-mahatma-gandhi/"}
+{"timestamp": "2026-04-18 22:57:16", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted via Trafilatura: 17885 chars"}
+{"timestamp": "2026-04-18 22:57:16", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://indianexpress.com/article/opinion/columns/mahata-gandhi-non-violence-teaching-6663929/"}
+{"timestamp": "2026-04-18 22:57:16", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://indianexpress.com/article/opinion/columns/mahata-gandhi-non-violence-teaching-6663929/"}
+{"timestamp": "2026-04-18 22:57:16", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-18 22:57:18", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted 5485 chars via newspaper"}
+{"timestamp": "2026-04-18 22:57:22", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 28 opinions from https://indianexpress.com/article/opinion/columns/mahata-gandhi-non-violence-teaching-6663929/"}
+{"timestamp": "2026-04-18 22:57:31", "level": "INFO", "service": "SEARCH", "message": "Search completed successfully."}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Received search request: 'Narendra Modi'"}
+{"timestamp": "2026-04-18 22:59:23", "level": "DEBUG", "service": "PARSER", "message": "Parsing query: 'Narendra Modi'"}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "PARSER", "message": "Parsed: mode=product, type=simple, entities=['narendra modi'], attr=None"}
+{"timestamp": "2026-04-18 22:59:23", "level": "DEBUG", "service": "SEARCH", "message": "Parsed query data", "data": {"mode": "product", "type": "simple", "original": "Narendra Modi", "entities": ["narendra modi"], "attribute": null, "filter": null, "source": null}}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Checking database for cached results..."}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "No cache found. Proceeding to web search."}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Inferred query type: general"}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Fact cascade domains: ['wikipedia.org']"}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Processing entity: narendra modi"}
+{"timestamp": "2026-04-18 22:59:23", "level": "DEBUG", "service": "SEARCH", "message": "Searching facts for 'narendra modi' on wikipedia.org"}
+{"timestamp": "2026-04-18 22:59:23", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'narendra modi site:wikipedia.org'", "data": {"num_results": 2, "trusted": null}}
+{"timestamp": "2026-04-18 22:59:23", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'narendra modi site:wikipedia.org'"}
+{"timestamp": "2026-04-18 22:59:27", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 2"}
+{"timestamp": "2026-04-18 22:59:27", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 1"}
+{"timestamp": "2026-04-18 22:59:27", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://en.wikipedia.org/wiki/Narendra_Modi"}
+{"timestamp": "2026-04-18 22:59:27", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://en.wikipedia.org/wiki/Narendra_Modi"}
+{"timestamp": "2026-04-18 22:59:27", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to Wikipedia extractor"}
+{"timestamp": "2026-04-18 22:59:30", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 18 facts from https://en.wikipedia.org/wiki/Narendra_Modi"}
+{"timestamp": "2026-04-18 22:59:30", "level": "INFO", "service": "SEARCH", "message": "Enough facts found for narendra modi from wikipedia.org"}
+{"timestamp": "2026-04-18 22:59:30", "level": "INFO", "service": "SEARCH", "message": "Fetching opinions for 'narendra modi' with query: 'narendra modi opinions analysis'"}
+{"timestamp": "2026-04-18 22:59:30", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'narendra modi opinions analysis'", "data": {"num_results": 3, "trusted": null}}
+{"timestamp": "2026-04-18 22:59:30", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'narendra modi opinions analysis'"}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 3"}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "SEARCH", "message": "Filtered out irrelevant result: International views of India and Modi | Pew Research Center", "data": {"url": "https://www.pewresearch.org/global/2023/08/29/international-views-of-india-and-modi/", "trace": ["Detected Category: unknown", "Overlap: 1 + Fuzzy: 0 / 4 (Base: 0.25)", "Filter Triggered: Score < 0.35 and no snippet overlap."]}}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "SEARCH", "message": "Filtered out irrelevant result: Why Modi's Populist Facade Is Cracking - The Atlantic", "data": {"url": "https://www.theatlantic.com/magazine/archive/2025/02/modi-nationalism-demagoguery-limitations/681094/", "trace": ["Detected Category: unknown", "Overlap: 1 + Fuzzy: 0 / 4 (Base: 0.25)", "Filter Triggered: Score < 0.35 and no snippet overlap."]}}
+{"timestamp": "2026-04-18 22:59:33", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 1"}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://www.bbc.com/news/world-asia-india-69010109"}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://www.bbc.com/news/world-asia-india-69010109"}
+{"timestamp": "2026-04-18 22:59:33", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-18 22:59:35", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-18 22:59:35", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://www.bbc.com/news/world-asia-india-69010109"}
+{"timestamp": "2026-04-18 22:59:36", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted via Trafilatura: 13922 chars"}
+{"timestamp": "2026-04-18 22:59:44", "level": "INFO", "service": "SEARCH", "message": "Search completed successfully."}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Received search request: 'How Rahul Gandhi is connected to Mahatma Gandhi?'"}
+{"timestamp": "2026-04-18 23:01:27", "level": "DEBUG", "service": "PARSER", "message": "Parsing query: 'How Rahul Gandhi is connected to Mahatma Gandhi?'"}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "PARSER", "message": "Parsed: mode=product, type=simple, entities=['how rahul gandhi is connected to mahatma gandhi?'], attr=None"}
+{"timestamp": "2026-04-18 23:01:27", "level": "DEBUG", "service": "SEARCH", "message": "Parsed query data", "data": {"mode": "product", "type": "simple", "original": "How Rahul Gandhi is connected to Mahatma Gandhi?", "entities": ["how rahul gandhi is connected to mahatma gandhi?"], "attribute": null, "filter": null, "source": null}}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Checking database for cached results..."}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "No cache found. Proceeding to web search."}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Inferred query type: general"}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Fact cascade domains: ['wikipedia.org']"}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Processing entity: how rahul gandhi is connected to mahatma gandhi?"}
+{"timestamp": "2026-04-18 23:01:27", "level": "DEBUG", "service": "SEARCH", "message": "Searching facts for 'how rahul gandhi is connected to mahatma gandhi?' on wikipedia.org"}
+{"timestamp": "2026-04-18 23:01:27", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'how rahul gandhi is connected to mahatma gandhi? site:wikipedia.org'", "data": {"num_results": 2, "trusted": null}}
+{"timestamp": "2026-04-18 23:01:27", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'how rahul gandhi is connected to mahatma gandhi? site:wikipedia.org'"}
+{"timestamp": "2026-04-18 23:01:30", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 2"}
+{"timestamp": "2026-04-18 23:01:30", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 2"}
+{"timestamp": "2026-04-18 23:01:30", "level": "DEBUG", "service": "SEARCH", "message": "Processing Fact URL: https://en.wikipedia.org/wiki/Rahul_Gandhi"}
+{"timestamp": "2026-04-18 23:01:30", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://en.wikipedia.org/wiki/Rahul_Gandhi"}
+{"timestamp": "2026-04-18 23:01:30", "level": "DEBUG", "service": "EXTRACTOR", "message": "Dispatching to Wikipedia extractor"}
+{"timestamp": "2026-04-18 23:01:32", "level": "DEBUG", "service": "SEARCH", "message": "Extracted 14 facts from https://en.wikipedia.org/wiki/Rahul_Gandhi"}
+{"timestamp": "2026-04-18 23:01:32", "level": "INFO", "service": "SEARCH", "message": "Enough facts found for how rahul gandhi is connected to mahatma gandhi? from wikipedia.org"}
+{"timestamp": "2026-04-18 23:01:32", "level": "INFO", "service": "SEARCH", "message": "Fetching opinions for 'how rahul gandhi is connected to mahatma gandhi?' with query: 'how rahul gandhi is connected to mahatma gandhi? opinions analysis'"}
+{"timestamp": "2026-04-18 23:01:32", "level": "INFO", "service": "SEARCH", "message": "Fetching results for: 'how rahul gandhi is connected to mahatma gandhi? opinions analysis'", "data": {"num_results": 3, "trusted": null}}
+{"timestamp": "2026-04-18 23:01:32", "level": "DEBUG", "service": "SEARCH", "message": "Executing DDG sync for: 'how rahul gandhi is connected to mahatma gandhi? opinions analysis'"}
+{"timestamp": "2026-04-18 23:01:34", "level": "DEBUG", "service": "SEARCH", "message": "Raw search results received: 3"}
+{"timestamp": "2026-04-18 23:01:34", "level": "INFO", "service": "SEARCH", "message": "Total relevant results found: 3"}
+{"timestamp": "2026-04-18 23:01:34", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://newsmeter.in/fact-check/rahul-gandhi-credits-mahatma-gandhi-for-the-constitution-not-ambedkar-here-are-the-facts-753970"}
+{"timestamp": "2026-04-18 23:01:34", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://newsmeter.in/fact-check/rahul-gandhi-credits-mahatma-gandhi-for-the-constitution-not-ambedkar-here-are-the-facts-753970"}
+{"timestamp": "2026-04-18 23:01:34", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-18 23:01:36", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-18 23:01:36", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://newsmeter.in/fact-check/rahul-gandhi-credits-mahatma-gandhi-for-the-constitution-not-ambedkar-here-are-the-facts-753970"}
+{"timestamp": "2026-04-18 23:01:38", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted via Trafilatura: 4032 chars"}
+{"timestamp": "2026-04-18 23:01:38", "level": "DEBUG", "service": "SEARCH", "message": "Processing Review URL: https://thewire.in/politics/chakravyuha-a-striking-parallel-between-rahul-and-mahatma-gandhi-in-unpacking-the-metaphor"}
+{"timestamp": "2026-04-18 23:01:38", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting content extraction from: https://thewire.in/politics/chakravyuha-a-striking-parallel-between-rahul-and-mahatma-gandhi-in-unpacking-the-metaphor"}
+{"timestamp": "2026-04-18 23:01:38", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting 'newspaper' extraction"}
+{"timestamp": "2026-04-18 23:01:39", "level": "DEBUG", "service": "EXTRACTOR", "message": "Attempting Trafilatura / Dense fallback"}
+{"timestamp": "2026-04-18 23:01:39", "level": "DEBUG", "service": "EXTRACTOR", "message": "Fallback scraper triggered for: https://thewire.in/politics/chakravyuha-a-striking-parallel-between-rahul-and-mahatma-gandhi-in-unpacking-the-metaphor"}
+{"timestamp": "2026-04-18 23:01:40", "level": "INFO", "service": "EXTRACTOR", "message": "Successfully extracted via Trafilatura: 7999 chars"}
+{"timestamp": "2026-04-18 23:01:47", "level": "INFO", "service": "SEARCH", "message": "Search completed successfully."}

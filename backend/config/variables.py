@@ -17,3 +17,10 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 # ── Debug Mode ────────────────────────────────────────────────
 # When True, all pipeline stages print verbose diagnostic output.
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "t")
+
+# Service-specific debugging (e.g., "SEARCH,NLP,DATABASE")
+# If empty or "*", all services are logged.
+DEBUG_SERVICES = os.getenv("MIACT_SERVICES", "*").upper().split(",")
+
+# Whether to log all services to the file regardless of selected console services
+LOG_ALL_TO_FILE = os.getenv("MIACT_LOG_ALL", "True").lower() in ("true", "1", "t")

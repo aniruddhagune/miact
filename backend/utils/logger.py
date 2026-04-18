@@ -2,7 +2,7 @@ import os
 import datetime
 import json
 import threading
-from backend.config.variables import DEBUG
+import backend.config.variables as _vars
 
 class MIACTLogger:
     _instance = None
@@ -33,24 +33,35 @@ class MIACTLogger:
 
     def log(self, level, service, message, data=None):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_entry = {
-            "timestamp": timestamp,
-            "level": level.upper(),
-            "service": service.upper(),
-            "message": message
-        }
-        if data:
-            log_entry["data"] = data
+        service_upper = service.upper()
+        
+        # 1. Determine if we should log to file
+        # We log to file if LOG_ALL_TO_FILE is True OR if this service is in DEBUG_SERVICES
+        is_service_enabled = "*" in _vars.DEBUG_SERVICES or service_upper in _vars.DEBUG_SERVICES
+        
+        should_log_to_file = _vars.LOG_ALL_TO_FILE or is_service_enabled
 
-        # Write to file
-        try:
-            with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(log_entry) + "\n")
-        except Exception as e:
-            print(f"Failed to write to log file: {e}")
+        if should_log_to_file:
+            log_entry = {
+                "timestamp": timestamp,
+                "level": level.upper(),
+                "service": service_upper,
+                "message": message
+            }
+            if data:
+                log_entry["data"] = data
 
-        # If debug is enabled, also print to console
-        if DEBUG or level.lower() in ["error", "warning"]:
+            try:
+                with open(self.log_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_entry) + "\n")
+            except Exception as e:
+                print(f"Failed to write to log file: {e}")
+
+        # 2. Determine if we should print to console
+        # We print if (DEBUG is True AND service is enabled) OR it's an error/warning
+        should_print = (_vars.DEBUG and is_service_enabled) or level.lower() in ["error", "warning"]
+
+        if should_print:
             color = ""
             reset = "\033[0m"
             if level.lower() == "error":
@@ -62,9 +73,9 @@ class MIACTLogger:
             elif level.lower() == "info":
                 color = "\033[92m"  # Green
             
-            prefix = f"[{service.upper()}]"
+            prefix = f"[{service_upper}]"
             print(f"{color}{prefix:<12} [{level.upper()}] {message}{reset}")
-            if data and DEBUG:
+            if data and _vars.DEBUG:
                 try:
                     print(f"      Data: {json.dumps(data, indent=2)}")
                 except:
@@ -80,7 +91,6 @@ class MIACTLogger:
         self.log("warning", service, message, data)
 
     def debug(self, service, message, data=None):
-        # Always log to file, but only print if DEBUG is True
         self.log("debug", service, message, data)
 
 # Global logger instance

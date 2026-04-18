@@ -120,9 +120,8 @@ async def search(query: str, t: str = None):
                 logger.debug("SEARCH", f"Processing News URL: {url}")
                 yield f"data: {json.dumps({'step': 'partial', 'entity': 'News', 'url': url})}\n\n"
                 try:
-                    import asyncio
-                    # Pass snippet as fallback
-                    pipeline_results = await asyncio.to_thread(process_query_url, parsed, url, fallback_text=snippet)
+                    # process_query_url is now async
+                    pipeline_results = await process_query_url(parsed, url, fallback_text=snippet)
                     if pipeline_results:
                         extracted_results.extend(pipeline_results)
                         logger.debug("SEARCH", f"Extracted {len(pipeline_results)} items from {url}")
@@ -179,8 +178,8 @@ async def search(query: str, t: str = None):
                         logger.debug("SEARCH", f"Processing Fact URL: {url}")
                         yield f"data: {json.dumps({'step': 'partial', 'entity': entity, 'url': url})}\n\n"
                         try:
-                            import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_objective=True)
+                            # process_query_url is now async
+                            pipeline_results = await process_query_url(entity_parsed, url, only_objective=True)
                         except Exception as e:
                             logger.error("SEARCH", f"Error processing URL {url}: {e}")
                             pipeline_results = None
@@ -217,8 +216,8 @@ async def search(query: str, t: str = None):
                         logger.debug("SEARCH", f"Processing Review URL: {url}")
                         yield f"data: {json.dumps({'step': 'partial', 'entity': f'{entity} Views', 'url': url})}\n\n"
                         try:
-                            import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_subjective=True)
+                            # process_query_url is now async
+                            pipeline_results = await process_query_url(entity_parsed, url, only_subjective=True)
                         except Exception as e:
                             logger.error("SEARCH", f"Error processing review URL {url}: {e}")
                             pipeline_results = None
@@ -262,8 +261,8 @@ async def search(query: str, t: str = None):
             for r in search_results:
                 logger.debug("SEARCH", f"Processing Global URL: {r['url']}")
                 try:
-                    import asyncio
-                    pipeline_results = await asyncio.to_thread(process_query_url, parsed, r["url"])
+                    # process_query_url is now async
+                    pipeline_results = await process_query_url(parsed, r["url"])
                 except Exception as e:
                     logger.error("SEARCH", f"Error processing URL {r['url']}: {e}")
                     pipeline_results = None

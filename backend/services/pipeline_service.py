@@ -6,6 +6,7 @@ from backend.extractors.extractor_data import extract_attributes, extract_tables
 from backend.services.utils import deduplicate_attributes
 from backend.domains.opinion_aspects import map_to_canonical_aspect
 from backend.utils.logger import logger
+import asyncio
 
 # Modern NLP Imports
 from backend.nlp.grammar_structural import classify_clause
@@ -36,7 +37,7 @@ def is_valid_opinion(text, aspect, score, structural_info=None):
     return True
 
 
-def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False, fallback_text=None):
+async def process_query_url(parsed: dict, url: str, only_objective=False, only_subjective=False, fallback_text=None):
     logger.info("PIPELINE", f"Processing URL: {url}")
     query = parsed.get("original", "")
     domain = detect_domain(query)
@@ -48,7 +49,7 @@ def process_query_url(parsed: dict, url: str, only_objective=False, only_subject
     alias_map = build_subject_aliases(subjects)
     
     # Try actual scraping
-    data = extract_content(url)
+    data = await extract_content(url)
 
     # ---- SCRAPING FALLBACK ----
     # If scraping failed/blocked, use the snippet as basic text

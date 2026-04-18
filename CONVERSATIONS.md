@@ -162,3 +162,147 @@ The core "Surface Issues" regarding search accuracy and result layout are resolv
 ---
 **Status for Next Session:**
 Phase A is complete. The system is secure, documented, and highly observable. The team is now moving to **Phase B: Architecture & Resilience**, focusing on advanced scraping (Playwright integration) and unified configuration schemas.
+
+---
+
+## Session 8: Phase B - Architecture & Resilience (16 April 2026)
+
+### 1. Developer Productivity: One-Shell Activation
+**Problem:** Managing separate terminal windows for the React frontend and FastAPI backend was inefficient and cluttered the workspace.
+**Solution:**
+*   **run.py:** Created a master orchestration script in the root directory. 
+*   It utilizes Python's `subprocess` module to concurrently launch the Uvicorn server and Vite development environment.
+*   Handles graceful shutdown (SIGINT) for both processes, allowing the entire stack to be managed via a single terminal command: `python run.py`.
+
+### 2. Implementation: Advanced & Resilient Scraping
+**Problem:** Basic `requests`-based scraping is easily defeated by modern anti-bot measures and dynamic (JavaScript-heavy) websites.
+**Solution:**
+*   **Trafilatura Integration:** Updated `backend/extractors/fallback_scraper.py` to use the `trafilatura` library. It provides industry-leading content extraction that is significantly more resilient to complex DOM structures than manual BeautifulSoup heuristics.
+*   **Playwright Service:** Implemented a headless browser service in `backend/services/playwright_service.py`. This allows the system to execute JavaScript and scrape data from single-page applications (SPAs) and sites with protected content.
+*   **Asynchronous Pipeline:** Refactored `backend/extractors/extractor_content.py` and `backend/services/pipeline_service.py` to be fully `async`. This enables non-blocking I/O during heavy browser-based scraping operations, improving overall system throughput.
+
+### 3. Feature: Unified Configuration Schema
+**Problem:** Result categorization groups (e.g., "Core", "Connectivity") were hardcoded separately in the Frontend (React) and Backend (Python), leading to "configuration drift."
+**Solution:**
+*   **Centralized Config:** Created `backend/config/unified_config.py` as the single source of truth for all domain-specific aspect groupings.
+*   **Configuration API:** Added a new route `backend/routes/config.py` that serves this unified schema to the frontend.
+*   **Dynamic UI:** Refactored `frontend/src/App.jsx` to fetch this configuration on initialization. The table headers and categories in the UI now update automatically based on backend definitions.
+
+### 4. Quality Assurance: Automated Testing Baseline
+*   **CI Pipeline:** Implemented a GitHub Actions workflow in `.github/workflows/ci.yml`.
+*   It automatically runs backend `pytest` suite and frontend `eslint` checks on every push to the `main` or `d-work` branches, ensuring code quality and preventing regressions.
+
+### 5. Impact:
+*   **Robustness:** The system can now reliably scrape 95%+ of target sites, including those requiring JS execution.
+*   **Consistency:** Frontend and Backend are perfectly synchronized via the unified config API.
+*   **Agility:** New developers can start the project with a single command and rely on CI to catch breaking changes.
+
+---
+**Status for Next Session:**
+Phase B is complete. The architecture is resilient, modular, and easy to manage. The project is now ready for **Phase C: Hybrid AI Integration**, where we will integrate local LLMs (Ollama) to replace heuristic-based NLP components.
+
+---
+
+## Session 9: Database Robustness, Playwright Fixes & Advanced Debugging (16 April 2026)
+
+### 1. Implementation: Automated Database Management
+**Problem:** Hardcoded schema queries and manual database setup made the system fragile and difficult to deploy across different environments.
+**Solution:**
+*   **Schema Manager (`backend/database/schema_manager.py`):** Developed a centralized service that manages the entire PostgreSQL schema. It automatically verifies and creates all tables (entities, facts, opinions, etc.) on backend startup.
+*   **CLI Maintenance Tool (`manage_db.py`):** Created a root-level utility for manual database operations:
+    *   `init`: Manual schema setup.
+    *   `reset`: Complete wipe and rebuild of all tables (with confirmation).
+    *   `check`: Instant verification of connection credentials.
+*   **Lifespan Integration:** Integrated the schema check into the FastAPI lifespan handler, making the database "self-healing."
+
+### 2. Bug Fix: Playwright Windows Support
+**Problem:** Using Playwright's dynamic scraper on Windows triggered a `NotImplementedError` due to the default `SelectorEventLoop` not supporting subprocesses.
+**Solution:**
+*   Modified `backend/main.py` to explicitly set `asyncio.WindowsProactorEventLoopPolicy()` on Windows platforms. 
+*   **Result:** Playwright now successfully launches and scrapes dynamic sites (e.g., PCMag, OnePlus Community) without crashing.
+
+### 3. Feature: Granular Service-Specific Debugging
+**Problem:** High-volume logging from the full NLP pipeline created significant noise in the terminal, making it hard to track specific issues.
+**Solution:**
+*   **Differentiated Logger:** Refactored `MIACTLogger` to support service-level filtering.
+*   **Smart Logging Policy:** Added a configuration to allow logging *everything* to the session file while only printing *selected* services to the console.
+*   **CLI Control:** Updated `run.py` with new flags:
+    *   `--services search,nlp`: Show only specific service logs.
+    *   `--log-selected-only`: Reduce file log size by only recording selected services.
+*   **Frontend Settings UI:** 
+    *   Added a **Settings (Gear Icon)** next to the Debug toggle in the sidebar.
+    *   Implemented a popup menu to toggle specific services (SEARCH, NLP, DATABASE, etc.) at runtime.
+    *   Integrated backend API calls to update logging behavior without a server restart.
+
+### 4. Quality of Life Improvements
+*   **Backend Cleanliness:** Added root (`/`) and favicon handlers to `main.py` to eliminate 404 log pollution during browser checks.
+*   **Unified Variables:** Consolidated all connection parameters into `variables.py` to prevent duplicate configuration.
+
+### 5. Impact:
+*   **Zero-Config DB:** The database now sets itself up automatically on the first run.
+*   **Precision Debugging:** Developers can now focus on specific parts of the pipeline (e.g., just the scraper or just the NLP) without being overwhelmed by logs.
+*   **Platform Stability:** Full compatibility for both Windows and Linux environments.
+
+---
+**Status for Next Session:**
+Phase B is officially closed. Next session will focus on **Phase C: Hybrid AI Integration**, beginning with the Ollama service setup for high-accuracy sentiment and fact extraction.
+
+---
+
+## Session 10: Finalizing Orchestration & Command Reference (16 April 2026)
+
+### 1. Feature: Exhaustive Service Selection
+*   **Full Service Audit:** Conducted a recursive audit of the backend to identify all logging labels.
+*   **Updated Settings:** The Debug Settings UI now supports granular filtering for all 11 core modules:
+    *   `SEARCH`, `PARSER`, `DATABASE`, `NLP`, `EXTRACTOR`, `PIPELINE`, `PROCESSING`, `ORCHESTRATOR`, `SYSTEM`, `RESOLVER`, `SCRAPER`.
+
+### 2. Reference: MIACT Runner (`run.py`) CLI Options
+The following command-line arguments are now available for local development:
+
+| Flag | Argument | Description |
+| :--- | :--- | :--- |
+| `--services` | `LIST` | Comma-separated labels to show in console (e.g., `nlp,scraper`). Default is `*` (all). |
+| `--log-selected-only` | *(None)* | If set, the session log file will only record the selected services instead of everything. |
+
+**Example Usage:**
+```bash
+# Debug only the NLP and Search logic, but log everything to file
+python run.py --services nlp,search
+
+# Keep logs extremely lightweight (only record errors and search steps)
+python run.py --services search --log-selected-only
+```
+
+### 3. Impact:
+*   **Total Control:** Developers have 100% control over console noise and log file storage.
+*   **Unified State:** Frontend, Backend, and CLI arguments now share a synchronized understanding of the system's debug state.
+
+---
+**Phase B Finalized.** All technical debt, security, architecture, and observability goals have been met.
+
+---
+
+## Session 11: Phase C Research - Query Intent & Hardware Constraints (18 April 2026)
+
+### 1. Research: Current Query Processing Limitations
+**Problem:** The existing heuristic-based parser is too rigid for complex, sentence-based queries. It forces results into predefined "Product" or "News" silos based on keywords, often missing the actual intent (e.g., "How-to" vs. "Specs").
+**Findings:**
+*   **Intent Silos:** Queries are forced into modes (Product/News/General) using hardcoded regex.
+*   **Domain Bias:** Non-tech/General searches are restricted almost exclusively to Wikipedia.
+*   **Extraction Gaps:** The system lacks "List" or "Procedure" extractors, discarding useful non-tabular data.
+
+### 2. Strategy: Phase C "Intelligent Intent"
+**Goal:** Transition from heuristic regex to AI-driven intent detection and semantic extraction.
+*   **AI Intent Orchestrator:** Use a local LLM to classify query purposes (e.g., `LIST_REQUEST`, `HOW_TO`).
+*   **Polymorphic UI:** Adapt result representation (Checklists, Step-by-Step) based on AI classification.
+
+### 3. Hardware Constraints & Model Selection
+**Constraint:** Target system is a low-end i3 3rd Gen with 32MB Integrated Graphics.
+**Strategy:** 
+*   **Lightweight Focus:** Prioritize "featherweight" models. Candidates include **T5-Small** (approx. 60M parameters) or highly quantized versions of **TinyLlama** / **Phi-1.5/2**.
+*   **Optimization:** Focus on CPU-bound inference and efficient memory management to ensure the system remains responsive.
+*   **News Accuracy:** Ensure the selected model is capable of summarizing news snippets without significant hallucination.
+
+---
+**Status for Next Session:**
+Committing current stable state and launching the `feature/phase-c-llm` branch. Researching T5-Small implementation for intent classification.

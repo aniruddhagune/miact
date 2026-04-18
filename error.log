@@ -1,0 +1,349 @@
+INFO:     Started server process [12408]
+INFO:     Waiting for application startup.
+[SYSTEM]     [INFO] MIACT Backend starting up...
+[DATABASE]   [INFO] Initializing database schema...
+[DATABASE]   [INFO] Database schema initialized successfully.
+INFO:     Application startup complete.
+[SEARCH]     [INFO] Database cache cleared manually via API.
+INFO:     127.0.0.1:58778 - "POST /clear-db HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58778 - "OPTIONS /api/debug HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58778 - "POST /api/debug HTTP/1.1" 200 OK
+[SEARCH]     [INFO] Received search request: 'oneplus 9'
+[PARSER]     [DEBUG] Parsing query: 'oneplus 9'
+[PARSER]     [INFO] Parsed: mode=product, type=simple, entities=['oneplus 9'], attr=None
+[SEARCH]     [DEBUG] Parsed query data
+      Data: {
+  "mode": "product",
+  "type": "simple",
+  "original": "oneplus 9",
+  "entities": [
+    "oneplus 9"
+  ],
+  "attribute": null,
+  "filter": null,
+  "source": null
+}
+INFO:     127.0.0.1:58780 - "GET /search?query=oneplus%209&t=1776324290436 HTTP/1.1" 200 OK
+[SEARCH]     [INFO] Checking database for cached results...
+[DATABASE]   [DEBUG] Fetching results from database cache
+      Data: {
+  "entities": [
+    "oneplus 9"
+  ]
+}
+[DATABASE]   [INFO] Cache lookup complete. Found 0 records.
+[SEARCH]     [INFO] No cache found. Proceeding to web search.
+[SEARCH]     [INFO] Inferred query type: tech_phone
+[SEARCH]     [INFO] Fact cascade domains: ['gsmarena.com', 'wikipedia.org', 'devicespecifications.com']  
+[SEARCH]     [INFO] Processing entity: oneplus 9
+[SEARCH]     [DEBUG] Searching facts for 'oneplus 9' on gsmarena.com
+[SEARCH]     [INFO] Fetching results for: 'oneplus 9 site:gsmarena.com'
+      Data: {
+  "num_results": 2,
+  "trusted": null
+}
+[SEARCH]     [DEBUG] Executing DDG sync for: 'oneplus 9 site:gsmarena.com'
+[SEARCH]     [DEBUG] Raw search results received: 2
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 - Full phone specifications - ...': 1.05
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 review - GSMArena.com tests...': 1.05
+[SEARCH]     [INFO] Total relevant results found: 2
+[SEARCH]     [DEBUG] Processing Fact URL: https://www.gsmarena.com/oneplus_9-10747.php
+[PIPELINE]   [INFO] Processing URL: https://www.gsmarena.com/oneplus_9-10747.php
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.gsmarena.com/oneplus_9-10747.php    
+[EXTRACTOR]  [DEBUG] Dispatching to GSMArena Specs extractor
+[PIPELINE]   [DEBUG] Found 46 table entries
+[PIPELINE]   [DEBUG] Analyzing 0 sentences for opinions
+[PIPELINE]   [INFO] Finished https://www.gsmarena.com/oneplus_9-10747.php. Total items: 45
+[SEARCH]     [DEBUG] Extracted 45 facts from https://www.gsmarena.com/oneplus_9-10747.php
+[SEARCH]     [DEBUG] Processing Fact URL: https://www.gsmarena.com/oneplus_9-review-2240.php
+[PIPELINE]   [INFO] Processing URL: https://www.gsmarena.com/oneplus_9-review-2240.php
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.gsmarena.com/oneplus_9-review-2240.php
+[EXTRACTOR]  [DEBUG] Attempting 'newspaper' extraction
+[EXTRACTOR]  [INFO] Successfully extracted 5598 chars via newspaper
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 55 sentences for opinions
+[PIPELINE]   [INFO] Finished https://www.gsmarena.com/oneplus_9-review-2240.php. Total items: 0
+[SEARCH]     [DEBUG] Searching facts for 'oneplus 9' on wikipedia.org
+[SEARCH]     [INFO] Fetching results for: 'oneplus 9 site:wikipedia.org'
+      Data: {
+  "num_results": 2,
+  "trusted": null
+}
+[SEARCH]     [DEBUG] Executing DDG sync for: 'oneplus 9 site:wikipedia.org'
+[SEARCH]     [DEBUG] Raw search results received: 2
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 - Wikipedia...': 0.95
+[SEARCH]     [INFO] Total relevant results found: 1
+[SEARCH]     [DEBUG] Processing Fact URL: https://en.wikipedia.org/wiki/OnePlus_9
+[PIPELINE]   [INFO] Processing URL: https://en.wikipedia.org/wiki/OnePlus_9
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://en.wikipedia.org/wiki/OnePlus_9
+[EXTRACTOR]  [DEBUG] Dispatching to Wikipedia extractor
+[PIPELINE]   [DEBUG] Found 26 table entries
+[PIPELINE]   [DEBUG] Analyzing 35 sentences for opinions
+[PIPELINE]   [INFO] Finished https://en.wikipedia.org/wiki/OnePlus_9. Total items: 28
+[SEARCH]     [DEBUG] Extracted 28 facts from https://en.wikipedia.org/wiki/OnePlus_9
+[SEARCH]     [INFO] Enough facts found for oneplus 9 from wikipedia.org
+[SEARCH]     [INFO] Fetching opinions for 'oneplus 9' with query: 'oneplus 9 review'
+[SEARCH]     [INFO] Fetching results for: 'oneplus 9 review'
+      Data: {
+  "num_results": 5,
+  "trusted": null
+}
+[SEARCH]     [DEBUG] Executing DDG sync for: 'oneplus 9 review'
+[SEARCH]     [DEBUG] Raw search results received: 5
+[NLP]        [DEBUG] Relevance Score for 'The Lab - OnePlus 9 Review...': 1.3
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 Cell Phone Review - Consumer R...': 1.1
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 - User opinions and reviews...': 1.3
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 review: Power reloaded! - Digi...': 1.3
+[NLP]        [DEBUG] Relevance Score for 'OnePlus 9 Review - OnePlus (India)...': 1.3
+[SEARCH]     [INFO] Total relevant results found: 5
+[SEARCH]     [DEBUG] Processing Review URL: https://community.oneplus.com/thread/1407405
+[PIPELINE]   [INFO] Processing URL: https://community.oneplus.com/thread/1407405
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://community.oneplus.com/thread/1407405    
+[EXTRACTOR]  [DEBUG] Attempting 'newspaper' extraction
+[EXTRACTOR]  [DEBUG] Attempting Trafilatura / Dense fallback
+[EXTRACTOR]  [DEBUG] Fallback scraper triggered for: https://community.oneplus.com/thread/1407405
+[EXTRACTOR]  [DEBUG] Attempting manual p/span fallback
+[EXTRACTOR]  [INFO] Attempting dynamic scrape via Playwright for: https://community.oneplus.com/thread/1407405
+Task exception was never retrieved
+future: <Task finished name='Task-9' coro=<Connection.run() done, defined at C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py:305> exception=NotImplementedError()>
+Traceback (most recent call last):
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py", line 312, in run
+    await self._transport.connect()
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 133, in connect
+    raise exc
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 120, in connect
+    self._proc = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "E:\Program file\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 1794, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 539, in _make_subprocess_transport
+    raise NotImplementedError
+NotImplementedError
+[EXTRACTOR]  [ERROR] Playwright dynamic scrape failed: 
+[EXTRACTOR]  [DEBUG] Falling back to generic BeautifulSoup scraper
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 0 sentences for opinions
+[PIPELINE]   [INFO] Finished https://community.oneplus.com/thread/1407405. Total items: 0
+[SEARCH]     [DEBUG] Processing Review URL: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/
+[PIPELINE]   [INFO] Processing URL: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/
+[EXTRACTOR]  [DEBUG] Attempting 'newspaper' extraction
+[EXTRACTOR]  [INFO] Successfully extracted 3272 chars via newspaper
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 41 sentences for opinions
+[PIPELINE]   [INFO] Finished https://www.consumerreports.org/electronics-computers/cell-phones/oneplus-9/m403938/. Total items: 0
+[SEARCH]     [DEBUG] Processing Review URL: https://www.gsmarena.com/oneplus_9-reviews-10747.php
+[PIPELINE]   [INFO] Processing URL: https://www.gsmarena.com/oneplus_9-reviews-10747.php
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.gsmarena.com/oneplus_9-reviews-10747.php
+[EXTRACTOR]  [DEBUG] Dispatching to GSMArena Specs extractor
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 0 sentences for opinions
+[PIPELINE]   [DEBUG] Processing 20 site-extracted opinions
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Anonymous, 03 Dec 2025 is this still mainable ente...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Anonymous, 03 Dec 2025 is this still mainable ente...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Anonymous, 03 Dec 2025 is this still mai...' -> aspects={'perofrmance', 'price', 'anonymous', 'phone'}, sentiment=negative, score=-0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Anonymous, 03 Dec 2025 is this still mainable ente...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Anonymous, 03 Dec 2025 is this still mainable ente...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Anonymous, 03 Dec 2025 is this still mai...' -> aspects={'price', 'anonymous'}, sentiment=negative, score=-0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Camera sensors are better than Oneplus 15 except n...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Camera sensors are better than Oneplus 15 except n...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Camera sensors are better than Oneplus 1...' -> aspects={'lens', 'sensors', 'oneplus'}, sentiment=neutral, score=0.178
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'is this still mainable entering 2026?? i found a r...'
+[NLP]        [DEBUG] Analyzing clause structure: 'is this still mainable entering 2026?? i found a r...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.233, complete=question
+[NLP]        [DEBUG] Analyzed part: 'is this still mainable entering 2026?? i...' -> aspects={'price'}, sentiment=negative, score=-0.233
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Agree, same issue here. Thanks...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Agree, same issue here. Thanks...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.333, complete=incomplete
+[NLP]        [DEBUG] Analyzed part: 'Agree, same issue here. Thanks...' -> aspects={'issue'}, sentiment=negative, score=-0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'issues', 'iam', 'device', 'life', 'issue', 'phone'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: '1 year in, 1st green line. and every 2 months or b...'
+[NLP]        [DEBUG] Analyzing clause structure: '1 year in, 1st green line. and every 2 months or b...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: '1 year in, 1st green line. and every 2 m...' -> aspects={'lines', 'line', 'screen', 'oneplus'}, sentiment=neutral, score=0.000
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Have this phone for about 3.5 years now and I stil...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Have this phone for about 3.5 years now and I stil...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Have this phone for about 3.5 years now ...' -> aspects={'years', 'games', 'phone', 'aspect'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Analyzing clause structure: 'using it for multimedia, pictures and what phones ...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'using it for multimedia, pictures and wh...' -> aspects={'cake', 'cherry', 'multimedia', 'phone', 'esim'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Anonymous, 07 Aug 2025 Disappointing Long-Term Exp...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Anonymous, 07 Aug 2025 Disappointing Long-Term Exp...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.667, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Anonymous, 07 Aug 2025 Disappointing Lon...' -> aspects={'years', 'issue', 'phone'}, sentiment=negative, score=-0.667
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Disappointing Long-Term Experience I used this pho...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Disappointing Long-Term Experience I used this pho...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.667, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Disappointing Long-Term Experience I use...' -> aspects={'motherboard', 'performance', 'line', 'device', 'screen', 'months', 'things', 'costs', 'decision', 'pkr', 'complaint', 'experience', 'repair', 'lines', 'pattern', 'turn', 'phone', 'gaming', 'issue', 'cost', 'summary', 'power', 'value', 'concern', 'quality', 'years', 'repairs'}, sentiment=positive, score=0.667
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'TRASH PHONE. Don’t waste your time, money, or effo...'
+[NLP]        [DEBUG] Analyzing clause structure: 'TRASH PHONE. Don’t waste your time, money, or effo...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.667, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'TRASH PHONE. Don’t waste your time, mone...' -> aspects={'beginning', 'gaming', 'time', 'years', 'phone'}, sentiment=positive, score=0.667
+[NLP]        [DEBUG] Analyzing clause structure: 'then, one random night, I got a beautiful, amazing...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=1.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'then, one random night, I got a beautifu...' -> aspects={'lines', 'mistake', 'zero', 'motherboard', 'sun', 'value', 'phone', 'issues', 'miracle', 'line', 'birth', 'pkr', 'time', 'devices', 'repair', 'days', 'shit'}, sentiment=positive, score=1.000
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'lines', 'issues', 'screen', 'phone', 'middle'}, sentiment=negative, score=0.103
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Clause classification: sentiment=negative, score=-0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'issues', 'phone'}, sentiment=negative, score=-0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'months', 'issues', 'battery', 'lot', 'years', 'phone'}, sentiment=negative, score=0.221
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Analyzing clause structure: 'ghost, 18 Apr 2025 hows this phone performing in 2...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'ghost, 18 Apr 2025 hows this phone perfo...' -> aspects={'shape', 'things', 'issues', 'device', 'years', 'phone'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Anonymous, 23 Dec 2024 i just got the oneplus 9 5g...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Anonymous, 23 Dec 2024 i just got the oneplus 9 5g...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.233, complete=question
+[NLP]        [DEBUG] Analyzed part: 'Anonymous, 23 Dec 2024 i just got the on...' -> aspects={'issues', 'condition', 'oneplus', 'ebay', 'phone'}, sentiment=positive, score=0.233
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'TomTomazack, 26 Feb 2024 I've owned mine for almos...'
+[NLP]        [DEBUG] Analyzing clause structure: 'TomTomazack, 26 Feb 2024 I've owned mine for almos...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'TomTomazack, 26 Feb 2024 I've owned mine...' -> aspects={'tomtomazack', 'health', 'mine', 'purchas', 'oneplus', 'years'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'For me this is a very good phone !...'
+[NLP]        [DEBUG] Analyzing clause structure: 'For me this is a very good phone !...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.373, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'For me this is a very good phone !...' -> aspects={'phone'}, sentiment=positive, score=0.373
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Anonymous, 25 Jan 2024 After owning the phone for ...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Anonymous, 25 Jan 2024 After owning the phone for ...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'Anonymous, 25 Jan 2024 After owning the ...' -> aspects={'spouses', 'anonymous', 'phone', 'years'}, sentiment=positive, score=0.667
+[NLP]        [DEBUG] Analyzing clause structure: 'she loves the phone. I wouldn't call her a power u...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'she loves the phone. I wouldn't call her...' -> aspects={'phone'}, sentiment=positive, score=0.572
+[NLP]        [DEBUG] Analyzing clause structure: 'she definitely puts a decent amount on tim on it d...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'she definitely puts a decent amount on t...' -> aspects={'tim', 'wood', 'amount'}, sentiment=positive, score=0.402
+[NLP]        [DEBUG] Analyzing clause structure: 'no green line for her yet either. The Snapdragon i...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.333, complete=complete
+[NLP]        [DEBUG] Analyzed part: 'no green line for her yet either. The Sn...' -> aspects={'snapdragon', 'phone'}, sentiment=positive, score=0.333
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'Rage, 07 Jan 2025 Would recommend you to keep your...'
+[NLP]        [DEBUG] Analyzing clause structure: 'Rage, 07 Jan 2025 Would recommend you to keep your...'
+[NLP]        [DEBUG] Clause classification: sentiment=positive, score=0.233, complete=question
+[NLP]        [DEBUG] Analyzed part: 'Rage, 07 Jan 2025 Would recommend you to...' -> aspects={'issues', 'minimum', 'jan', 'time', 'fan', 'pubg'}, sentiment=positive, score=0.233
+[PIPELINE]   [INFO] Finished https://www.gsmarena.com/oneplus_9-reviews-10747.php. Total items: 23       
+[SEARCH]     [DEBUG] Extracted 23 opinions from https://www.gsmarena.com/oneplus_9-reviews-10747.php     
+[SEARCH]     [DEBUG] Processing Review URL: https://www.digitalcitizen.life/oneplus-9-review/
+[PIPELINE]   [INFO] Processing URL: https://www.digitalcitizen.life/oneplus-9-review/
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.digitalcitizen.life/oneplus-9-review/
+[EXTRACTOR]  [DEBUG] Attempting 'newspaper' extraction
+[EXTRACTOR]  [DEBUG] Attempting Trafilatura / Dense fallback
+[EXTRACTOR]  [DEBUG] Fallback scraper triggered for: https://www.digitalcitizen.life/oneplus-9-review/
+[EXTRACTOR]  [DEBUG] Attempting manual p/span fallback
+[EXTRACTOR]  [INFO] Attempting dynamic scrape via Playwright for: https://www.digitalcitizen.life/oneplus-9-review/
+Task exception was never retrieved
+future: <Task finished name='Task-10' coro=<Connection.run() done, defined at C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py:305> exception=NotImplementedError()>
+Traceback (most recent call last):
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py", line 312, in run
+    await self._transport.connect()
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 133, in connect
+    raise exc
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 120, in connect
+    self._proc = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "E:\Program file\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 1794, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 539, in _make_subprocess_transport
+    raise NotImplementedError
+NotImplementedError
+[EXTRACTOR]  [ERROR] Playwright dynamic scrape failed: 
+[EXTRACTOR]  [DEBUG] Falling back to generic BeautifulSoup scraper
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 0 sentences for opinions
+[PIPELINE]   [INFO] Finished https://www.digitalcitizen.life/oneplus-9-review/. Total items: 0
+[SEARCH]     [DEBUG] Processing Review URL: https://www.oneplus.in/9/reviews
+[PIPELINE]   [INFO] Processing URL: https://www.oneplus.in/9/reviews
+[EXTRACTOR]  [DEBUG] Attempting content extraction from: https://www.oneplus.in/9/reviews
+[EXTRACTOR]  [DEBUG] Attempting 'newspaper' extraction
+[EXTRACTOR]  [DEBUG] Attempting Trafilatura / Dense fallback
+[EXTRACTOR]  [DEBUG] Fallback scraper triggered for: https://www.oneplus.in/9/reviews
+[EXTRACTOR]  [DEBUG] Attempting manual p/span fallback
+[EXTRACTOR]  [INFO] Attempting dynamic scrape via Playwright for: https://www.oneplus.in/9/reviews
+Task exception was never retrieved
+future: <Task finished name='Task-11' coro=<Connection.run() done, defined at C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py:305> exception=NotImplementedError()>
+Traceback (most recent call last):
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_connection.py", line 312, in run
+    await self._transport.connect()
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 133, in connect
+    raise exc
+  File "C:\Users\INDIA\Desktop\miact\venv\Lib\site-packages\playwright\_impl\_transport.py", line 120, in connect
+    self._proc = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "E:\Program file\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 1794, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "E:\Program file\Lib\asyncio\base_events.py", line 539, in _make_subprocess_transport
+    raise NotImplementedError
+NotImplementedError
+[EXTRACTOR]  [ERROR] Playwright dynamic scrape failed:
+[EXTRACTOR]  [DEBUG] Falling back to generic BeautifulSoup scraper
+[PIPELINE]   [DEBUG] Found 0 table entries
+[PIPELINE]   [DEBUG] Analyzing 2 sentences for opinions
+[NLP]        [DEBUG] Mapping aspect-sentiment for: '{{user.signedIn ?...'
+[NLP]        [DEBUG] Analyzing clause structure: '{{user.signedIn ?...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=question
+[NLP]        [DEBUG] Skipping neutral question: '{{user.signedIn ?'
+[NLP]        [DEBUG] Mapping aspect-sentiment for: 'user.name : searchData.welcome}} {{searchData.sign...'
+[NLP]        [DEBUG] Analyzing clause structure: 'user.name : searchData.welcome}} {{searchData.sign...'
+[NLP]        [DEBUG] Clause classification: sentiment=neutral, score=0.0, complete=incomplete
+[PIPELINE]   [INFO] Finished https://www.oneplus.in/9/reviews. Total items: 0
+[PROCESSING] [INFO] Grouping variants and persisting for 1 entities
+[PROCESSING] [DEBUG] Processing 96 items for oneplus 9
+[PROCESSING] [DEBUG] Calculating scores from 23 opinions
+[PROCESSING] [DEBUG] Persisting 80 attributes to database
+[PROCESSING] [INFO] All entities processed and persisted
+[SEARCH]     [INFO] Search completed successfully.

@@ -50,10 +50,10 @@ The project successfully distinguishes between technical product specifications 
 
 ## 5. Roadmap for Improvement
 
-### Phase A: Immediate Technical Debt (High Priority)
+### "Phase A: Immediate Technical Debt (High Priority)
 *   **Environment Variables:** Move all secrets and configurations (DB URI, API keys) to a `.env` file using `python-dotenv` or Pydantic Settings.
 *   **Documentation Alignment:** Synchronize `Synopsis.md` and `README.md` with the current React/FastAPI reality.
-*   **Security Audit:** Ensure no sensitive information is leaked in logs or SSE streams.
+*   **Security Audit:** Ensure no sensitive information is leaked in logs or SSE streams."
 
 ### Phase B: Architecture & Resilience (Medium Term)
 *   **Advanced Scraping:** Incorporate `playwright` or `trafilatura` for more resilient, headless scraping of dynamic or protected sites.

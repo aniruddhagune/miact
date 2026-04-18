@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, Component } from "react";
 import "./App.css";
-import { ArrowRight, Loader, ChevronLeft, History, Link as LinkIcon, Terminal } from "lucide-react";
+import { ArrowRight, Loader, ChevronLeft, History, Link as LinkIcon, Terminal, Settings, Check } from "lucide-react";
 
 class ErrorBoundary extends Component {
    constructor(props) {
@@ -9,9 +9,6 @@ class ErrorBoundary extends Component {
    }
    static getDerivedStateFromError(error) {
       return { hasError: true, errorMessage: error.toString() };
-   }
-   componentDidCatch(error, errorInfo) {
-      console.error("ErrorBoundary caught localized rendering crash:", error, errorInfo);
    }
    render() {
       if (this.state.hasError) {
@@ -37,43 +34,94 @@ function App() {
    const [loading, setLoading] = useState(false);
    const [isDragging, setIsDragging] = useState(false);
    const [debugMode, setDebugMode] = useState(false);
+   const [configGroups, setConfigGroups] = useState(null);
+
+   // Debug Settings
+   const [showDebugMenu, setShowDebugMenu] = useState(false);
+   const [debugSettings, setDebugSettings] = useState({
+      services: ["*"],
+      log_all: true,
+      available_services: []
+   });
 
    // Sources Card
    const [showSourcesPopup, setShowSourcesPopup] = useState(false);
    const [activeSourceTab, setActiveSourceTab] = useState(null);
    const sourcesPopupRef = useRef(null);
    const sourcesToggleRef = useRef(null);
+   const debugMenuRef = useRef(null);
 
    const containerRef = useRef(null);
 
-   // Initialize Debug Mode from backend
+   // Initialize settings from backend
    useEffect(() => {
-     const fetchDebugMode = async () => {
+     const initApp = async () => {
        try {
-         const response = await fetch("http://127.0.0.1:8000/api/debug");
-         const data = await response.json();
-         setDebugMode(data.debug);
+         // Fetch Debug Settings
+         const debugResp = await fetch("http://127.0.0.1:8000/api/debug/settings");
+         const debugData = await debugResp.json();
+         setDebugMode(debugData.debug);
+         setDebugSettings({
+            services: debugData.services,
+            log_all: debugData.log_all,
+            available_services: debugData.available_services
+         });
+
+         // Fetch Unified Config
+         const configResp = await fetch("http://127.0.0.1:8000/api/config/groups");
+         const configData = await configResp.json();
+         setConfigGroups(configData);
        } catch (err) {
-         console.error("Failed to fetch initial debug mode:", err);
+         console.error("Failed to initialize app settings:", err);
        }
      };
-     fetchDebugMode();
+     initApp();
    }, []);
+
+   const updateBackendDebug = async (newMode, newServices, newLogAll) => {
+      try {
+         await fetch("http://127.0.0.1:8000/api/debug/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+               debug: newMode,
+               services: newServices,
+               log_all: newLogAll
+            }),
+         });
+      } catch (err) {
+         console.error("Failed to update debug settings:", err);
+      }
+   };
 
    const handleToggleDebug = async () => {
      const newDebugState = !debugMode;
-     try {
-       const response = await fetch("http://127.0.0.1:8000/api/debug", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ debug: newDebugState }),
-       });
-       const data = await response.json();
-       setDebugMode(data.debug);
-       alert(`Debug mode ${data.debug ? "enabled" : "disabled"}. Check the console or server logs.`);
-     } catch (err) {
-       alert("Failed to toggle debug mode.");
-     }
+     setDebugMode(newDebugState);
+     await updateBackendDebug(newDebugState, debugSettings.services, debugSettings.log_all);
+   };
+
+   const toggleService = (service) => {
+      let nextServices;
+      if (service === "*") {
+         nextServices = ["*"];
+      } else {
+         const current = debugSettings.services.filter(s => s !== "*");
+         if (current.includes(service)) {
+            nextServices = current.filter(s => s !== service);
+            if (nextServices.length === 0) nextServices = ["*"];
+         } else {
+            nextServices = [...current, service];
+         }
+      }
+      const nextSettings = { ...debugSettings, services: nextServices };
+      setDebugSettings(nextSettings);
+      updateBackendDebug(debugMode, nextServices, debugSettings.log_all);
+   };
+
+   const toggleLogAll = () => {
+      const nextLogAll = !debugSettings.log_all;
+      setDebugSettings({ ...debugSettings, log_all: nextLogAll });
+      updateBackendDebug(debugMode, debugSettings.services, nextLogAll);
    };
 
    // Sync sources tab with active chat
@@ -134,7 +182,7 @@ function App() {
       };
    }, []);
 
-   // Close sources popup on click-outside
+   // Close popups on click-outside
    useEffect(() => {
       const handleClickOutside = (e) => {
          if (
@@ -146,10 +194,17 @@ function App() {
          ) {
             setShowSourcesPopup(false);
          }
+         if (
+            showDebugMenu &&
+            debugMenuRef.current &&
+            !debugMenuRef.current.contains(e.target)
+         ) {
+            setShowDebugMenu(false);
+         }
       };
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
-   }, [showSourcesPopup]);
+   }, [showSourcesPopup, showDebugMenu]);
 
    const handleToggleSidebar = () => {
       if (!sidebarOpen) {
@@ -204,10 +259,6 @@ function App() {
          }
 
          if (url.includes(':~:text=')) return url;
-         
-         // The spec uses :~: as the fragment directive delimiter
-         // If a hash already exists: URL#hash:~:text=...
-         // If no hash exists: URL#:~:text=...
          if (url.includes('#')) {
             return `${url}:~:${fragment}`;
          }
@@ -263,7 +314,7 @@ function App() {
                   q.urls = data.urls;
                   q.status = "Analyzing URLs...";
                } else if (data.step === "partial") {
-                  q.status = `Processing: ${data.url}...`;
+                  q.status = `Processing: ${data.url.substring(0, 30)}...`;
                } else if (data.step === "result") {
                   q.results = data.results;
                   q.urls = data.urls || q.urls;
@@ -299,11 +350,11 @@ function App() {
        containerRef.current.scrollTop = containerRef.current.scrollHeight;
      }
    }, [queries, loading]);
+
     const getSentimentTier = (score) => {
       if (score === null || score === undefined) return null;
       const s = Math.abs(score);
       const polarity = score >= 0 ? "Positive" : "Negative";
-      // Inclusive threshold for user concerns
       if (s <= 0.25) return `Slightly ${polarity}`;
       if (s <= 0.50) return `Moderately ${polarity}`;
       if (s <= 0.75) return `Extremely ${polarity}`;
@@ -316,7 +367,6 @@ function App() {
          let domain = u.hostname.replace('www.', '');
          let path = u.pathname.split('/').filter(Boolean).pop() || '';
          path = path.replace(/[-_]/g, ' ').replace('.html', '').replace('.php', '');
-
          const hasNumbers = /\d.*\d/.test(path);
          if (!path || path.toLowerCase() === domain.toLowerCase() || hasNumbers || path.length > 35) {
             return `${domain.charAt(0).toUpperCase() + domain.slice(1)}`;
@@ -330,8 +380,6 @@ function App() {
     const formatSpecValue = (val) => {
       if (!val) return null;
       const strVal = String(val);
-      
-      // Automatic URL detection for fields like "Website"
       if (strVal.startsWith('http')) {
         return (
           <a href={strVal} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline break-all">
@@ -339,21 +387,8 @@ function App() {
           </a>
         );
       }
-
       const splitSafe = strVal.split(/(?<=\D),\s*|,\s+(?=\D)/);
       const parts = splitSafe.length > 1 ? splitSafe : [strVal];
-      if (parts.length === 1) {
-        const match = strVal.match(/^([^(]+)(?:\s*\(([^)]+)\))?$/);
-        if (match) {
-          return (
-            <span>
-              <span className="text-major">{match[1].trim()}</span>
-              {match[2] && <span className="text-minor"> ({match[2]})</span>}
-            </span>
-          );
-        }
-        return <span className="text-major">{strVal}</span>;
-      }
       return (
         <span className="flex flex-col gap-0.5">
           {parts.map((p, i) => {
@@ -371,9 +406,6 @@ function App() {
         </span>
       );
     };
-
-   // Detect aspects that should use '/' inline joining (bands, freq-style, simple lists)
-   const isBandAspect = (asp) => /bands?|frequency|freq|lte|gsm|wcdma|hspa|nr|5g|4g|3g|2g/i.test(asp);
 
    const renderResults = (q) => {
       if (q.error) return <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-500 rounded-md font-inter">{q.error}</div>;
@@ -403,7 +435,6 @@ function App() {
          });
       });
 
-      // Frontend deduplication: remove exact (aspect, value) copies across sources
       const objSeen = new Set();
       const dedupedObjective = allObjective.filter(r => {
          const key = `${r.aspect}|||${String(r.value).toLowerCase().trim()}`;
@@ -446,43 +477,24 @@ function App() {
       return (
          <div className="w-full animate-fade-in-up">
             <div className="glass-panel w-full max-w-5xl mx-auto transition-all duration-500 relative pb-12 overflow-hidden">
-               {/* Unified Pill Toggle Button */}
                <div className="flex justify-center mb-10">
                   <div className="pill-container">
-                     <div
-                        className="pill-indicator"
-                        style={{
-                           transform: `translateX(${currentTab === 'facts' ? '0' : '100%'})`
-                        }}
-                     />
-                     <button
-                        onClick={() => toggleTab(queries.indexOf(q), 'facts')}
-                        className={`pill-button ${currentTab === 'facts' ? 'active' : 'inactive'}`}
-                     >
-                        Facts
-                     </button>
-                     <button
-                        onClick={() => toggleTab(queries.indexOf(q), 'opinions')}
-                        className={`pill-button ${currentTab === 'opinions' ? 'active' : 'inactive'}`}
-                     >
-                        Opinions
-                     </button>
+                     <div className="pill-indicator" style={{ transform: `translateX(${currentTab === 'facts' ? '0' : '100%'})` }} />
+                     <button onClick={() => toggleTab(queries.indexOf(q), 'facts')} className={`pill-button ${currentTab === 'facts' ? 'active' : 'inactive'}`}>Facts</button>
+                     <button onClick={() => toggleTab(queries.indexOf(q), 'opinions')} className={`pill-button ${currentTab === 'opinions' ? 'active' : 'inactive'}`}>Opinions</button>
                   </div>
                </div>
 
                <div className="w-full">
                   {currentTab === 'facts' ? (
-                     /* PANEL 1: FACTS */
                      <div key="facts-panel" className="w-full animate-fade-in-up">
-                        <div className="overflow-x-auto w-full">
+                        <div className="overflow-x-auto w-full px-6">
                            <table className="w-full text-left border-collapse font-inter">
                               <thead>
                                  <tr>
                                     <th className="bg-slate-700/30 p-4 text-slate-300 text-sm font-oswald font-medium uppercase tracking-[0.2em] rounded-tl-xl border-b border-white/5 w-[20%]">Aspect</th>
                                     {entities.map((en, i) => (
-                                       <th key={en} className={`bg-slate-700/30 p-4 text-slate-300 text-sm font-oswald font-medium uppercase tracking-[0.2em] border-b border-white/5 ${i === entities.length - 1 ? 'rounded-tr-xl' : ''}`}>
-                                          {en}
-                                       </th>
+                                       <th key={en} className={`bg-slate-700/30 p-4 text-slate-300 text-sm font-oswald font-medium uppercase tracking-[0.2em] border-b border-white/5 ${i === entities.length - 1 ? 'rounded-tr-xl' : ''}`}>{en}</th>
                                     ))}
                                  </tr>
                               </thead>
@@ -490,96 +502,48 @@ function App() {
                                  {(() => {
                                     const rows = [];
                                     const renderedAspects = new Set();
-                                    
                                     const isTech = q.parsed?.query_type?.startsWith("tech");
-                                    
-                                    const GROUPS = isTech ? {
-                                       "Dates": ["announced", "status", "released", "release_date", "announcement_date"],
-                                       "Core": ["os", "chipset", "cpu", "gpu", "platform", "system on chip", "processor", "graphics"],
-                                       "Memory": ["card slot", "internal", "ram", "memory", "storage"],
-                                       "Connectivity": ["wlan", "bluetooth", "positioning", "nfc", "radio", "usb", "connectivity", "wi-fi", "wifi"],
-                                       "Display": ["type", "size", "resolution", "protection", "refresh rate", "screen", "display", "nits"]
-                                    } : {
-                                       "Personal Info": ["born", "died", "birth", "death", "spouse", "children", "nationality", "age"],
-                                       "Background": ["education", "alma mater", "religion", "residence", "parents"],
-                                       "Professional": ["career", "known for", "office", "political party", "occupation", "role", "years active"],
-                                       "Legal Info": ["enacted by", "date enacted", "date effective", "citation", "territorial extent", "status", "jurisdiction"],
-                                       "Works": ["books", "writings", "notable works", "publications", "awards", "achievements"]
-                                    };
-
+                                    const GROUPS = configGroups ? (isTech ? configGroups.tech : configGroups.general) : {};
                                     const groupOrder = Object.keys(GROUPS);
 
                                     groupOrder.forEach(groupName => {
                                        const groupKeys = GROUPS[groupName];
                                        const matchingAspects = aspectKeys.filter(asp => (groupKeys.includes(asp.toLowerCase()) || asp.toLowerCase().includes(groupName.toLowerCase().split(' ')[0])) && !renderedAspects.has(asp));
-                                       
                                        if (matchingAspects.length > 0) {
-                                          rows.push(
-                                             <tr key={`header-${groupName}`} className="spec-category-header">
-                                                <td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-cyan-400/80 border-none">
-                                                   {groupName}
-                                                </td>
-                                             </tr>
-                                          );
+                                          rows.push(<tr key={`header-${groupName}`} className="spec-category-header"><td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-cyan-400/80 border-none">{groupName}</td></tr>);
                                           matchingAspects.forEach(asp => {
                                              renderedAspects.add(asp);
                                              rows.push(
                                                 <tr key={asp} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group">
                                                    <td className="py-4 pl-8 pr-6 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 w-1/4">{asp}</td>
-                                                   {entities.map(en => {
-                                                      const rec = aspectMap[asp][en];
-                                                      return (
-                                                         <td key={en} className="py-4 px-6 text-sm text-slate-200">
-                                                            {rec ? (
-                                                               <div className="flex items-center gap-2 group/cell">
-                                                                  {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
-                                                                  {rec.source && (
-                                                                     <a href={getEnhancedUrl(rec.source, `${asp} ${rec.value}`)} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
-                                                                        <LinkIcon size={12} />
-                                                                     </a>
-                                                                  )}
-                                                               </div>
-                                                            ) : '-'}
-                                                         </td>
-                                                      );
-                                                   })}
+                                                   {entities.map(en => (
+                                                      <td key={en} className="py-4 px-6 text-sm text-slate-200">
+                                                         {aspectMap[asp][en] ? (
+                                                            <div className="flex items-center gap-2 group/cell">
+                                                               {formatSpecValue(`${aspectMap[asp][en].value} ${aspectMap[asp][en].unit || ''}`)}
+                                                               {aspectMap[asp][en].source && (
+                                                                  <a href={getEnhancedUrl(aspectMap[asp][en].source, `${asp} ${aspectMap[asp][en].value}`)} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400"><LinkIcon size={12} /></a>
+                                                               )}
+                                                            </div>
+                                                         ) : '-'}
+                                                      </td>
+                                                   ))}
                                                 </tr>
                                              );
                                           });
                                        }
                                     });
 
-                                    // Other
                                     const otherAspects = aspectKeys.filter(asp => !renderedAspects.has(asp));
                                     if (otherAspects.length > 0) {
-                                       rows.push(
-                                          <tr key="header-other" className="spec-category-header">
-                                             <td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-none">
-                                                Additional Details
-                                             </td>
-                                          </tr>
-                                       );
+                                       rows.push(<tr key="header-other" className="spec-category-header"><td colSpan={entities.length + 1} className="pt-8 pb-3 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 border-none">Additional Details</td></tr>);
                                        otherAspects.forEach(asp => {
                                           rows.push(
                                              <tr key={asp} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group">
                                                 <td className="py-4 pl-8 pr-6 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 w-1/4">{asp}</td>
-                                                {entities.map(en => {
-                                                   const rec = aspectMap[asp][en];
-                                                   return (
-                                                      <td key={en} className="py-4 px-6 text-sm text-slate-200">
-                                                         {rec ? (
-                                                            <div className="flex items-center gap-2 group/cell">
-                                                               {formatSpecValue(`${rec.value} ${rec.unit || ''}`)}
-                                                               {rec.source && (
-                                                                  <a href={getEnhancedUrl(rec.source, `${asp} ${rec.value}`)} target="_blank" rel="noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-cyan-400">
-                                                                     <LinkIcon size={12} />
-                                                                  </a>
-                                                               )}
-                                                            </div>
-                                                         ) : '-'}
-                                                      </td>
-                                                   );
-                                                })}
+                                                {entities.map(en => (
+                                                   <td key={en} className="py-4 px-6 text-sm text-slate-200">{aspectMap[asp][en] ? formatSpecValue(`${aspectMap[asp][en].value} ${aspectMap[asp][en].unit || ''}`) : '-'}</td>
+                                                ))}
                                              </tr>
                                           );
                                        });
@@ -591,110 +555,25 @@ function App() {
                         </div>
                      </div>
                   ) : (
-                     /* PANEL 2: OPINIONS */
                      <div key="opinions-panel" className="w-full animate-fade-in-up px-4">
-                        {(() => {
-                           const MEANINGFUL_SCORE_ASPECTS = new Set([
-                              "camera", "cameras", "battery", "display", "screen", "performance",
-                              "build", "design", "software", "charging", "speakers", "audio",
-                              "speed", "value", "price", "overall", "gaming", "photography", "dates", "core", "connectivity"
-                           ]);
-
-                           const aspectScoreMap = {};
-                           entities.forEach(en => {
-                              scoreMap[en].forEach(s => {
-                                 const asp = s.aspect.toLowerCase();
-                                 if (!MEANINGFUL_SCORE_ASPECTS.has(asp)) return;
-                                 if (!aspectScoreMap[asp]) aspectScoreMap[asp] = { value: s.value, cards: [] };
-                                 else aspectScoreMap[asp].value = Math.max(aspectScoreMap[asp].value, s.value);
-                              });
-                              subjectiveMap[en].forEach(r => {
-                                 if (!getSentimentTier(r.score)) return;
-                                 const asp = r.aspect.toLowerCase();
-                                 const target = aspectScoreMap[asp];
-                                 if (target) target.cards.push({ ...r, entityLabel: en });
-                              });
-                           });
-
-                           const otherCards = entities.flatMap(en =>
-                              subjectiveMap[en].filter(r => {
-                                 if (!getSentimentTier(r.score)) return false;
-                                 const asp = r.aspect.toLowerCase();
-                                 if (aspectScoreMap[asp]) return false;
-                                 return r.text.length > 20;
-                              }).map(r => ({ ...r, entityLabel: en }))
-                           ).slice(0, 8);
-
-                           const aspectRows = Object.entries(aspectScoreMap);
-
-                           return (
-                              <div className="flex flex-col gap-10">
-                                 {aspectRows.map(([asp, data]) => (
-                                    <div key={asp} className="flex opinion-row items-center gap-8">
-                                       <div className="shrink-0 w-28 flex flex-col items-center justify-center">
-                                          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center">{asp}</span>
-                                          <span className={`text-[24px] font-mono font-black ${data.value >= 7 ? 'text-emerald-400' : data.value >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                             {data.value}<span className="text-sm text-slate-500 font-bold">/10</span>
-                                          </span>
-                                       </div>
-                                       <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
-                                          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
-                                             {data.cards.map((r, k) => {
-                                                const tier = getSentimentTier(r.score);
-                                                const isPos = r.score >= 0;
-                                                const isPro = r.metadata?.is_professional;
-                                                const sentimentClass = isPos ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500';
-                                                return (
-                                                   <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${sentimentClass} ${isPro ? 'professional' : ''}`}>
-                                                      <div className="flex justify-between items-center mb-3">
-                                                         <span className="bg-slate-700/60 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-slate-400">{r.entityLabel?.split(' ').pop()}</span>
-                                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${isPos ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{tier}</span>
-                                                      </div>
-                                                      <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed flex-1">"{r.text}"</p>
-                                                      {(() => {
-                                                         const cardUrl = r.metadata?.url || (queries[activeChat]?.urls && queries[activeChat].urls[r.entityLabel]?.urls?.[0]);
-                                                         if (!cardUrl) return null;
-                                                         return (
-                                                            <a href={getEnhancedUrl(cardUrl, r.text)} target="_blank" rel="noreferrer" className="mt-4 self-end p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all">
-                                                               <LinkIcon size={14} />
-                                                            </a>
-                                                         );
-                                                      })()}
-                                                   </div>
-                                                );
-                                             })}
+                        <div className="flex flex-col gap-10">
+                           {entities.map(en => (
+                              <div key={en} className="mb-8">
+                                 <h4 className="text-cyan-400 font-oswald uppercase tracking-widest mb-4 px-4">{en} Impressions</h4>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+                                    {subjectiveMap[en].map((r, k) => (
+                                       <div key={k} className={`opinion-card bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${r.score >= 0 ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500'}`}>
+                                          <div className="flex justify-between items-center mb-3">
+                                             <span className="bg-slate-700/60 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-slate-400">{r.aspect}</span>
+                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${r.score >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{getSentimentTier(r.score)}</span>
                                           </div>
+                                          <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed flex-1">"{r.text}"</p>
                                        </div>
-                                    </div>
-                                 ))}
-                                 {otherCards.length > 0 && (
-                                    <div className="flex opinion-row items-center gap-8">
-                                       <div className="shrink-0 w-28 flex flex-col items-center justify-center">
-                                          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 text-center">Other</span>
-                                       </div>
-                                       <div className="flex-1 overflow-x-auto custom-scrollbar pb-2">
-                                          <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
-                                             {otherCards.map((r, k) => (
-                                                <div key={k} className={`opinion-card w-72 shrink-0 bg-slate-900/60 border border-white/5 rounded-xl p-5 flex flex-col shadow-lg transition-transform hover:-translate-y-1 ${r.score > 0 ? 'border-t-2 border-t-emerald-500' : 'border-t-2 border-t-red-500'}`}>
-                                                   <div className="flex justify-between items-center mb-3">
-                                                      <span className="bg-slate-800/80 px-3 py-1 rounded-full text-xs font-semibold capitalize text-slate-300">{r.aspect}</span>
-                                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${r.score > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{getSentimentTier(r.score)}</span>
-                                                   </div>
-                                                   <p className="m-0 text-[13px] text-slate-300 italic leading-relaxed flex-1">"{r.text}"</p>
-                                                   {queries[activeChat]?.urls && queries[activeChat].urls[r.entityLabel]?.urls?.[0] && (
-                                                      <a href={queries[activeChat].urls[r.entityLabel].urls[0]} target="_blank" rel="noreferrer" className="mt-4 self-end p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all">
-                                                         <LinkIcon size={14} />
-                                                      </a>
-                                                   )}
-                                                </div>
-                                             ))}
-                                          </div>
-                                       </div>
-                                    </div>
-                                 )}
+                                    ))}
+                                 </div>
                               </div>
-                           );
-                        })()}
+                           ))}
+                        </div>
                      </div>
                   )}
                </div>
@@ -705,96 +584,54 @@ function App() {
 
    return (
       <div className="flex h-screen w-screen overflow-hidden text-white font-inter bg-[radial-gradient(circle_at_top_left,#283347,#040a19)]">
-
          {/* Left Sidebar */}
-         <div
-            className={`relative flex flex-col bg-[#111] z-10 pt-4 pb-0 ${isDragging ? '' : 'transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]'}`}
-            style={{ width: sidebarOpen ? sidebarWidth : 72 }}
-         >
+         <div className={`relative flex flex-col bg-[#111] z-10 pt-4 pb-0 ${isDragging ? '' : 'transition-[width] duration-300'}`} style={{ width: sidebarOpen ? sidebarWidth : 72 }}>
             <div className="flex flex-col flex-1 overflow-hidden px-3">
-               <div className="flex items-center overflow-hidden min-h-[30px] mb-4 pl-[8px] w-full relative">
-                  <button className="p-[2px] flex items-center justify-center rounded-md hover:bg-white/10 transition-colors cursor-pointer shrink-0 z-10" onClick={handleToggleSidebar}>
-                     {sidebarOpen ? <ChevronLeft size={26} className="text-white" /> : <History size={26} className="text-white" />}
-                  </button>
-                  <h3
-                     className={`font-oswald whitespace-nowrap transition-all duration-200 font-medium uppercase tracking-widest m-0 text-center absolute left-0 right-0 pointer-events-none ${sidebarOpen && sidebarWidth > 140 ? "opacity-100" : "opacity-0"}`}
-                     style={{ fontSize: '20px' }}
-                  >
-                     History
-                  </h3>
+               <div className="flex items-center mb-4 pl-2 w-full relative">
+                  <button className="p-1 rounded-md hover:bg-white/10" onClick={handleToggleSidebar}>{sidebarOpen ? <ChevronLeft size={24} /> : <History size={24} />}</button>
+                  <h3 className={`font-oswald uppercase tracking-widest m-0 text-center absolute left-0 right-0 pointer-events-none transition-opacity ${sidebarOpen && sidebarWidth > 140 ? 'opacity-100' : 'opacity-0'}`}>History</h3>
                </div>
-
-               <div className={`h-px bg-gray-600 mb-4 mx-1 transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-50'}`}></div>
-
-               <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar w-full">
-                  {queries.map((q, i) => (
-                     <div
-                        key={i}
-                        className={`cursor-pointer overflow-hidden transition-all duration-300 ease-in-out font-inter w-full text-center
-                  ${i === activeChat
-                              ? "bg-gray-900 border-none text-white px-3 min-h-[40px] shadow-inner flex items-center justify-center truncate"
-                              : (sidebarOpen ? "text-gray-400 hover:bg-gray-800 hover:text-white p-2 min-h-[40px] truncate flex items-center justify-center" : "text-gray-400 flex items-center justify-center p-2")
-                           }`}
-                        onClick={() => setActiveChat(i)}
-                        title={q.query_text}
-                     >
-                        {sidebarOpen ? (
-                           <span className="truncate w-full block">{q.query_text}</span>
-                        ) : (
-                           <span>&bull;</span>
-                        )}
+               <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
+                  {queries.map((q, i) => <div key={i} className={`cursor-pointer p-2 rounded truncate ${i === activeChat ? 'bg-gray-900 text-white' : 'text-gray-500'}`} onClick={() => setActiveChat(i)}>{sidebarOpen ? q.query_text : '•'}</div>)}
+               </div>
+               
+               {/* Bottom Buttons */}
+               <div className="p-3 border-t border-white/5 space-y-2 relative">
+                  {/* Debug Menu Popup */}
+                  {showDebugMenu && sidebarOpen && (
+                     <div ref={debugMenuRef} className="absolute bottom-full left-3 right-3 bg-[#1a1a1a] border border-white/10 rounded-xl p-4 shadow-2xl z-[100] mb-2 animate-in fade-in slide-in-from-bottom-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Service Filters</h4>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                           <button onClick={() => toggleService("*")} className={`text-[9px] font-bold p-1.5 rounded border transition-all ${debugSettings.services.includes("*") ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 border-white/5 text-slate-500'}`}>ALL SERVICES</button>
+                           {debugSettings.available_services.map(s => (
+                              <button key={s} onClick={() => toggleService(s)} className={`text-[9px] font-bold p-1.5 rounded border transition-all flex items-center justify-between ${debugSettings.services.includes(s) ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 border-white/5 text-slate-500'}`}>
+                                 {s} {debugSettings.services.includes(s) && <Check size={10} />}
+                              </button>
+                           ))}
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                           <span className="text-[9px] font-bold text-slate-500 uppercase">Log All To File</span>
+                           <button onClick={toggleLogAll} className={`w-8 h-4 rounded-full relative transition-colors ${debugSettings.log_all ? 'bg-cyan-600' : 'bg-slate-700'}`}>
+                              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${debugSettings.log_all ? 'left-4.5' : 'left-0.5'}`} />
+                           </button>
+                        </div>
                      </div>
-                  ))}
-               </div>
+                  )}
 
-               {/* Debug and Clear Cache Buttons at Bottom */}
-               <div className="p-3 border-t border-white/5 mt-auto space-y-2">
-                  <button
-                     onClick={handleToggleDebug}
-                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-all duration-300 font-inter text-xs font-bold uppercase tracking-widest ${sidebarOpen
-                        ? (debugMode ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.2)]" : "bg-slate-800/40 text-slate-500 border border-white/5 hover:bg-slate-800/60")
-                        : (debugMode ? "text-cyan-400" : "text-slate-600 hover:text-slate-400")
-                        }`}
-                     title={debugMode ? "Disable Debug Mode" : "Enable Debug Mode"}
-                  >
-                     {sidebarOpen ? (
-                        <>
-                           <Terminal size={14} />
-                           <span>Debug: {debugMode ? "ON" : "OFF"}</span>
-                        </>
-                     ) : (
-                        <Terminal size={20} />
+                  <div className="flex gap-1">
+                     <button onClick={handleToggleDebug} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition-all text-xs font-bold uppercase tracking-widest ${debugMode ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" : "bg-slate-800/40 text-slate-500 border border-white/5"}`}>
+                        <Terminal size={14} /> {sidebarOpen && `Debug: ${debugMode ? "ON" : "OFF"}`}
+                     </button>
+                     {sidebarOpen && (
+                        <button onClick={() => setShowDebugMenu(!showDebugMenu)} className={`p-2 rounded-lg border transition-all ${showDebugMenu ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-slate-800/40 border-white/5 text-slate-500'}`}>
+                           <Settings size={14} />
+                        </button>
                      )}
-                  </button>
-
-                  <button
-                     onClick={handleClearCache}
-                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition-all duration-300 font-inter text-xs font-bold uppercase tracking-widest ${sidebarOpen
-                        ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
-                        : "text-red-500/40 hover:text-red-500"
-                        }`}
-                     title="Clear Local Database Cache"
-                  >
-                     {sidebarOpen ? (
-                        <>
-                           <span>Clear Cache</span>
-                        </>
-                     ) : (
-                        <span>&times;</span>
-                     )}
-                  </button>
+                  </div>
+                  <button onClick={handleClearCache} className="w-full py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold uppercase tracking-widest hover:bg-red-500/20">{sidebarOpen ? "Clear Cache" : "×"}</button>
                </div>
             </div>
-
-            {/* Resizer Handle */}
-            <div
-               className="absolute top-0 -right-[3px] w-[6px] h-full cursor-col-resize z-20 hover:bg-blue-400/50 transition-colors"
-               onMouseDown={(e) => {
-                  isResizing.current = true;
-                  setIsDragging(true);
-                  document.body.style.cursor = 'col-resize';
-               }}
-            />
+            <div className="absolute top-0 -right-[3px] w-[6px] h-full cursor-col-resize hover:bg-blue-400/50" onMouseDown={() => { isResizing.current = true; setIsDragging(true); }} />
          </div>
 
          {/* Main Content Area */}
@@ -802,7 +639,7 @@ function App() {
             <div ref={containerRef} className="flex-1 overflow-y-auto p-10 pb-[140px] flex flex-col items-center">
 
                {/* Absolute Centered Welcome Banner */}
-               <div className={`absolute left-0 right-0 top-[35%] flex justify-center pointer-events-none px-4 text-center ${queries.length === 0 ? 'animate-welcome-in' : 'animate-welcome-out'}`}>
+               <div className={`absolute left-0 right-0 top-[35%] flex justify-center pointer-events-none px-4 text-center ${queries.length === 0 ? 'opacity-100' : 'opacity-0'}`}>
                   <h1 className="text-5xl md:text-7xl xl:text-[6rem] font-oswald text-white uppercase tracking-[0.1em] drop-shadow-2xl">
                      MIACT
                   </h1>

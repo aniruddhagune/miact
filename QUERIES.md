@@ -36,7 +36,7 @@ Phase 1 is complete! We have addressed several "surface issues," but two major o
 
 ---
 
-## Active Queries (Next Session Roadmap)
+## Non - Active Queries (Next Session Roadmap)
 
 ### 1. Fix: Blank Results for Specific Subjects (e.g., "Indian Tax Act")
 **Problem:** The "Snippet Fallback" was implemented for News but not yet for Entity searches. If Wikipedia blocks the request, the result stays blank.
@@ -86,3 +86,5 @@ I have applied the core fixes to the backend. Would you like to test these chang
 ## Active Queries
 
 1. Create a new branch on git, and update this version of project on the new branch of current github repository. Name of new branch will be "d-work"
+
+2. We do need a Debug mode and button, which can help us track and know everything going on in the server. Which sites are working, which are giving errors, and what else is happeing on the background. And also, all this debug information is coming up, it will be stored in a file which is created for each session, in a debug folder. How we can setup the debug and what will be available in debug mode.

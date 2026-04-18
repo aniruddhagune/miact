@@ -37,9 +37,8 @@ async def execute_search(query: str, t: str = None):
                 logger.debug("ORCHESTRATOR", f"Processing manual URL: {url}")
                 yield f"data: {json.dumps({'step': 'partial', 'entity': inferred_entity or 'Analyzing...', 'url': url})}\n\n"
                 try:
-                    import asyncio
-                    # Direct URLs get DUAL extraction (Both objective and subjective)
-                    pipeline_results = await asyncio.to_thread(process_query_url, parsed, url, only_objective=False, only_subjective=False)
+                    # process_query_url is now async
+                    pipeline_results = await process_query_url(parsed, url, only_objective=False, only_subjective=False)
                 except Exception as e:
                     logger.error("ORCHESTRATOR", f"Error processing manual URL {url}: {e}")
                     pipeline_results = None
@@ -164,8 +163,8 @@ async def execute_search(query: str, t: str = None):
                         fact_urls.append(url)
                         yield f"data: {json.dumps({'step': 'partial', 'entity': entity, 'url': url})}\n\n"
                         try:
-                            import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_objective=True)
+                            # process_query_url is now async
+                            pipeline_results = await process_query_url(entity_parsed, url, only_objective=True)
                         except Exception as e:
                             logger.error("ORCHESTRATOR", f"Error processing URL {url}: {e}")
                             pipeline_results = None
@@ -189,8 +188,8 @@ async def execute_search(query: str, t: str = None):
                         review_urls.append(url)
                         yield f"data: {json.dumps({'step': 'partial', 'entity': f'{entity} Reviews', 'url': url})}\n\n"
                         try:
-                            import asyncio
-                            pipeline_results = await asyncio.to_thread(process_query_url, entity_parsed, url, only_subjective=True)
+                            # process_query_url is now async
+                            pipeline_results = await process_query_url(entity_parsed, url, only_subjective=True)
                         except Exception as e:
                             logger.error("ORCHESTRATOR", f"Error processing review URL {url}: {e}")
                             pipeline_results = None
@@ -220,7 +219,8 @@ async def execute_search(query: str, t: str = None):
             extracted_results = []
             for r in search_results:
                 try:
-                    pipeline_results = process_query_url(parsed, r["url"])
+                    # process_query_url is now async
+                    pipeline_results = await process_query_url(parsed, r["url"])
                 except Exception as e:
                     logger.error("ORCHESTRATOR", f"Error processing URL {r['url']}: {e}")
                     pipeline_results = None
