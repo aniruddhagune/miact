@@ -315,6 +315,9 @@ function App() {
                   q.status = "Analyzing URLs...";
                } else if (data.step === "partial") {
                   q.status = `Processing: ${data.url.substring(0, 30)}...`;
+               } else if (data.step === "ai_summary") {
+                  q.aiSummary = data.summary;
+                  q.status = "Generated AI Insight";
                } else if (data.step === "result") {
                   q.results = data.results;
                   q.urls = data.urls || q.urls;
@@ -477,6 +480,21 @@ function App() {
       return (
          <div className="w-full animate-fade-in-up">
             <div className="glass-panel w-full max-w-5xl mx-auto transition-all duration-500 relative pb-12 overflow-hidden">
+               
+               {/* AI SUMMARY SECTION */}
+               {q.aiSummary && (
+                  <div className="mx-6 mt-8 mb-4 p-6 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl relative overflow-hidden group">
+                     <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.8)]" />
+                     <div className="flex items-center gap-2 mb-3">
+                        <Terminal size={14} className="text-cyan-400" />
+                        <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/80">AI Executive Summary</h5>
+                     </div>
+                     <p className="text-slate-200 text-sm leading-relaxed font-inter italic">
+                        {q.aiSummary}
+                     </p>
+                  </div>
+               )}
+
                <div className="flex justify-center mb-10">
                   <div className="pill-container">
                      <div className="pill-indicator" style={{ transform: `translateX(${currentTab === 'facts' ? '0' : '100%'})` }} />

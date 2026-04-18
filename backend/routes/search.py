@@ -52,6 +52,23 @@ def clear_db():
 async def search(query: str, t: str = None):
     logger.info("SEARCH", f"Received search request: '{query}'")
     parsed = parse_query(query)
+    
+    # ---- AI ENHANCED INTENT ----
+    try:
+        from backend.services.ai_service import classify_intent_ai
+        ai_intent = await classify_intent_ai(query)
+        if ai_intent:
+            logger.info("SEARCH", f"AI Intent Detection: {ai_intent.get('intent')}")
+            # Merge AI insights into parsed object
+            parsed["ai_intent"] = ai_intent.get("intent")
+            parsed["ai_focus"] = ai_intent.get("focus")
+            if ai_intent.get("entities") and not parsed.get("entities"):
+                parsed["entities"] = ai_intent.get("entities")
+            if ai_intent.get("mode"):
+                parsed["mode"] = ai_intent.get("mode")
+    except Exception as e:
+        logger.error("SEARCH", f"AI Intent Detection failed: {e}")
+
     logger.debug("SEARCH", f"Parsed query data", data=parsed)
 
     async def event_generator():
@@ -97,6 +114,7 @@ async def search(query: str, t: str = None):
         logger.info("SEARCH", "No cache found. Proceeding to web search.")
         results = {}
         urls_dict = {}
+        ai_summary = None
 
         # ---- CLASSIFY QUERY TYPE for trusted domain selection ----
         entities = parsed.get("entities", [])
@@ -114,9 +132,12 @@ async def search(query: str, t: str = None):
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
 
             extracted_results = []
+            all_text_for_summary = ""
+            
             for r in search_results:
                 url = r["url"]
                 snippet = r.get("snippet", "")
+                all_text_for_summary += snippet + "\n"
                 logger.debug("SEARCH", f"Processing News URL: {url}")
                 yield f"data: {json.dumps({'step': 'partial', 'entity': 'News', 'url': url})}\n\n"
                 try:
@@ -128,9 +149,19 @@ async def search(query: str, t: str = None):
                 except Exception as e:
                     logger.error("SEARCH", f"Error processing news URL {url}: {e}")
 
+            # AI Summary for News
+            if all_text_for_summary:
+                try:
+                    from backend.services.ai_service import summarize_news_ai
+                    ai_summary = await summarize_news_ai(all_text_for_summary)
+                    if ai_summary:
+                        yield f"data: {json.dumps({'step': 'ai_summary', 'summary': ai_summary})}\n\n"
+                except Exception as e:
+                    logger.error("SEARCH", f"AI News Summary failed: {e}")
+
             results["news"] = extracted_results
             yield f"data: {json.dumps({'step': 'processing', 'message': 'Grouping Results...'})}\n\n"
-            results = group_variants_and_persist(results)
+            results = group_variants_and_persist(results, ai_summary=ai_summary)
             yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
             return
 
@@ -258,11 +289,14 @@ async def search(query: str, t: str = None):
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
 
             extracted_results = []
+            all_text_for_summary = ""
             for r in search_results:
                 logger.debug("SEARCH", f"Processing Global URL: {r['url']}")
+                snippet = r.get("snippet", "")
+                all_text_for_summary += snippet + "\n"
                 try:
                     # process_query_url is now async
-                    pipeline_results = await process_query_url(parsed, r["url"])
+                    pipeline_results = await process_query_url(parsed, r["url"], fallback_text=snippet)
                 except Exception as e:
                     logger.error("SEARCH", f"Error processing URL {r['url']}: {e}")
                     pipeline_results = None
@@ -272,9 +306,19 @@ async def search(query: str, t: str = None):
                     logger.debug("SEARCH", f"Extracted {len(pipeline_results)} items from {r['url']}")
                     yield f"data: {json.dumps({'step': 'partial', 'entity': 'global', 'url': r['url']})}\n\n"
 
+            # AI Summary for Global (List/How-to/General)
+            if all_text_for_summary and parsed.get("ai_intent") in ["LIST_REQUEST", "HOW_TO", "GENERAL_INFO"]:
+                try:
+                    from backend.services.ai_service import summarize_news_ai
+                    ai_summary = await summarize_news_ai(all_text_for_summary)
+                    if ai_summary:
+                        yield f"data: {json.dumps({'step': 'ai_summary', 'summary': ai_summary})}\n\n"
+                except Exception as e:
+                    logger.error("SEARCH", f"AI Global Summary failed: {e}")
+
             results["global"] = extracted_results
             yield f"data: {json.dumps({'step': 'processing', 'message': 'Validating and Grouping Variants...'})}\n\n"
-            results = group_variants_and_persist(results)
+            results = group_variants_and_persist(results, ai_summary=ai_summary)
 
         logger.info("SEARCH", "Search completed successfully.")
         yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"

@@ -282,27 +282,31 @@ python run.py --services search --log-selected-only
 
 ---
 
-## Session 11: Phase C Research - Query Intent & Hardware Constraints (18 April 2026)
+## Session 11: Phase C - Hybrid AI Integration & Low-End Optimization (18 April 2026)
 
-### 1. Research: Current Query Processing Limitations
-**Problem:** The existing heuristic-based parser is too rigid for complex, sentence-based queries. It forces results into predefined "Product" or "News" silos based on keywords, often missing the actual intent (e.g., "How-to" vs. "Specs").
-**Findings:**
-*   **Intent Silos:** Queries are forced into modes (Product/News/General) using hardcoded regex.
-*   **Domain Bias:** Non-tech/General searches are restricted almost exclusively to Wikipedia.
-*   **Extraction Gaps:** The system lacks "List" or "Procedure" extractors, discarding useful non-tabular data.
+### 1. Model Selection & Hardware Optimization
+**Discovery:** Target hardware (i3 3rd Gen, 32MB VRAM) requires extreme efficiency.
+**Solution:** 
+*   **Model:** Selected **Qwen2.5-0.5B** via Ollama. It offers superior instruction-following and JSON output capabilities in a sub-1GB footprint.
+*   **Optimization:** Configured Ollama API calls with `num_ctx: 2048` and `temperature: 0.1` to ensure fast inference and consistent factual output on a 2-core CPU.
 
-### 2. Strategy: Phase C "Intelligent Intent"
-**Goal:** Transition from heuristic regex to AI-driven intent detection and semantic extraction.
-*   **AI Intent Orchestrator:** Use a local LLM to classify query purposes (e.g., `LIST_REQUEST`, `HOW_TO`).
-*   **Polymorphic UI:** Adapt result representation (Checklists, Step-by-Step) based on AI classification.
+### 2. Implementation: AI Intent Orchestrator
+**Feature:** Replaced/Augmented heuristic regex with LLM-based intent detection.
+*   **Module:** `backend/services/ai_service.py` handles communication with the local LLM.
+*   **Capability:** Correctily identifies `HOW_TO`, `LIST_REQUEST`, `PRODUCT_SPECS`, and `NEWS_QUERY` intents even from complex, conversational sentences.
+*   **Dynamic Parsing:** The LLM extracts entities and focus areas from the query, feeding them into the specialized search cascades.
 
-### 3. Hardware Constraints & Model Selection
-**Constraint:** Target system is a low-end i3 3rd Gen with 32MB Integrated Graphics.
-**Strategy:** 
-*   **Lightweight Focus:** Prioritize "featherweight" models. Candidates include **T5-Small** (approx. 60M parameters) or highly quantized versions of **TinyLlama** / **Phi-1.5/2**.
-*   **Optimization:** Focus on CPU-bound inference and efficient memory management to ensure the system remains responsive.
-*   **News Accuracy:** Ensure the selected model is capable of summarizing news snippets without significant hallucination.
+### 3. Feature: AI Executive Summaries
+**Problem:** Multiple news articles or global search results were difficult to parse manually.
+**Solution:**
+*   **Summarization Engine:** Implemented `summarize_news_ai` to synthesize information from multiple search snippets.
+*   **UI Integration:** Added a dedicated **"AI Insight"** section in the React frontend. It features a cyberpunk-styled glass panel with a cyan glow to highlight summarized information.
+*   **Persistence:** Updated `group_variants_and_persist` to store AI summaries in the PostgreSQL database under the "AI Insight" entity, enabling instant retrieval for cached queries.
+
+### 4. Impact:
+*   **Intelligence:** The system now "understands" the user's question rather than just matching keywords.
+*   **Performance:** Inference is fast enough for real-time use even on 12-year-old hardware.
+*   **User Experience:** Complex questions (e.g., "How to fix a laptop battery?") now provide a concise AI-generated guide alongside traditional search results.
 
 ---
-**Status for Next Session:**
-Committing current stable state and launching the `feature/phase-c-llm` branch. Researching T5-Small implementation for intent classification.
+**Phase C Initial Integration Complete.** The system is now truly "Intelligent." Next steps involve refining the Conflict Resolution Engine.

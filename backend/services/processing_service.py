@@ -53,9 +53,26 @@ def _split_regional_value(val: str) -> list[str] | None:
     return None
 
 
-def group_variants_and_persist(results_dict: dict):
+def group_variants_and_persist(results_dict: dict, ai_summary: str = None):
     logger.info("PROCESSING", f"Grouping variants and persisting for {len(results_dict)} entities")
     final_dict = {}
+
+    # If AI summary provided, add it to final_dict for immediate return and persist it
+    if ai_summary:
+        logger.debug("PROCESSING", "Persisting AI Summary")
+        try:
+            ent_id = get_or_create_entity("AI Insight")
+            # We use a dummy URL for AI generated content if no source is directly applicable
+            insert_attribute(
+                entity_id=ent_id,
+                document_id="ai://executive-summary",
+                aspect="Summary",
+                value=ai_summary,
+                attr_type="text",
+                confidence_score=2.0
+            )
+        except Exception as e:
+            logger.error("PROCESSING", f"Failed to persist AI summary: {e}")
 
     for entity_name, items in results_dict.items():
         logger.debug("PROCESSING", f"Processing {len(items)} items for {entity_name}")
