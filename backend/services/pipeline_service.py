@@ -5,6 +5,8 @@ from backend.extractors.detector_subjects import extract_subjects, build_subject
 from backend.extractors.extractor_data import extract_attributes, extract_tables, parse_table_numeric
 from backend.utils.utils import deduplicate_attributes
 from backend.domains.opinion_aspects import map_to_canonical_aspect
+from backend.services.ai_service import summarize_news_ai
+from backend.nlp.relevance_engine import is_english_text
 from backend.utils.logger import logger
 import asyncio
 
@@ -67,10 +69,15 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
         }
 
     if not data:
-        logger.error("PIPELINE", f"Extraction failed completely for {url}")
+        logger.error(f"Extraction failed completely for {url}")
         return None
 
-    logger.debug("PIPELINE", f"Successfully retrieved {len(data.get('text', ''))} chars from {url}")
+    clean_text_content = data.get("text", "")
+    if clean_text_content and not is_english_text(clean_text_content):
+        logger.warning("PIPELINE", f"LanguageGuard: Article content is non-English for {url}. Skipping.")
+        return []
+
+    logger.debug(f"Successfully retrieved {len(clean_text_content)} chars from {url}")
 
     results = []
     
@@ -192,3 +199,45 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
 
     logger.info("PIPELINE", f"Finished: {url} | Found {len(results)} total items.")
     return results
+
+async def process_news_url(parsed: dict, url: str, fallback_text: str = None) -> list:
+    """
+    Extracts a full news article and generates an AI summary.
+    """
+    logger.info("PIPELINE", f"Processing News URL: {url}")
+    
+    # Use existing extract_content
+    data = await extract_content(url)
+    
+    clean_text_content = ""
+    if data and data.get("text"):
+        clean_text_content = data["text"]
+    elif fallback_text:
+        logger.warning("PIPELINE", f"Extraction failed for news URL {url}. Using fallback snippet.")
+        clean_text_content = fallback_text
+    
+    if not clean_text_content:
+        logger.error("PIPELINE", f"No content available for news URL: {url}")
+        return []
+
+    if not is_english_text(clean_text_content):
+        logger.warning("PIPELINE", f"LanguageGuard: News article content is non-English for {url}. Skipping.")
+        return []
+
+    # Summarize via AI
+    summary = await summarize_news_ai(clean_text_content)
+    
+    # Determine Entity
+    entities = parsed.get("entities", [])
+    target_entity = entities[0] if entities else "News Summary"
+    
+    published_at = data.get("published_at") if data else None
+
+    return [{
+        "entity": target_entity,
+        "aspect": "AI Highlights",
+        "value": summary,
+        "type": "table",
+        "source": url,
+        "date": published_at
+    }]

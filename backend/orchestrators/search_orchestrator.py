@@ -7,7 +7,7 @@ from backend.domains.news import get_trusted_domains as get_news_domains
 from backend.domains.domain_signals import infer_query_type
 
 from backend.services.db_query_service import fetch_from_db
-from backend.services.pipeline_service import process_query_url
+from backend.services.pipeline_service import process_query_url, process_news_url
 from backend.services.processing_service import group_variants_and_persist
 from backend.services.entity_resolver_service import resolve_canonical_entities
 from backend.nlp.query_intent import analyze_query_intent
@@ -77,10 +77,8 @@ async def execute_search(query: str, t: str = None):
                 logger.info("ORCHESTRATOR", f"Entities resolved: {original_entities} -> {canonical_entities}")
                 yield f"data: {json.dumps({'step': 'processing', 'message': f'Resolved: {canonical_entities}'})}\n\n"
 
-        # ---- QUERY INTENT ANALYSIS ----
-        logger.debug("ORCHESTRATOR", "Analyzing query intent")
-        intent = analyze_query_intent(query)
-        parsed["intent"] = intent
+        # ---- QUERY INTENT ANALYSIS (Already in parsed) ----
+        intent = parsed.get("intent")
 
         # ---- STEP 1: CHECK DATABASE ----
         logger.info("ORCHESTRATOR", "Checking cache")
@@ -109,34 +107,78 @@ async def execute_search(query: str, t: str = None):
             yield f"data: {json.dumps(final_resp)}\n\n"
             return
 
-        # ---- STEP 3: FALLBACK TO SEARCH ----
-        logger.info("ORCHESTRATOR", "No cache, proceeding to search")
+        # ---- STEP 3: PIPELINE FLOW DECISION ----
+        logger.info("ORCHESTRATOR", "Executing Pipeline Flow Rework logic")
+        
+        # 1. Locality needed?
+        locality = parsed.get("locality", {})
+        search_region = "in-en" # Default
+        if locality.get("code") == "USA" or locality.get("code") == "NA":
+            search_region = "us-en"
+        elif locality.get("code") == "UK":
+            search_region = "uk-en"
+        elif locality.get("code") == "IN":
+            search_region = "in-en"
+        
         results = {}
         urls_dict = {}
-
-        # ---- CLASSIFY QUERY TYPE ----
         entities = parsed.get("entities", [])
         filter_data = parsed.get("filter")
-        query_type = infer_query_type(query, entities=entities)
-        parsed["query_type"] = query_type
+        query_type = parsed.get("query_type", "general")
 
-        if parsed["mode"] == "news" or query_type.startswith("news"):
+        # 2. What type of query? & 3. Trusted sites exist?
+        if parsed["mode"] == "news":
             news_domains = get_news_domains(query_type)
-            logger.info("ORCHESTRATOR", f"News search on: {news_domains}")
-            news_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains)
-            urls_dict["news"] = {"query": query, "urls": [r["url"] for r in news_results]}
+            logger.info("ORCHESTRATOR", f"News Flow: Region={search_region}, Domains={news_domains}")
+            news_results = await fetch_search_results_async(query, num_results=5, trusted_domains=news_domains, region=search_region)
+            
+            primary_entity = entities[0] if entities else "News"
+            results[primary_entity] = []
+            
+            urls_list = [r["url"] for r in news_results]
+            urls_dict[primary_entity] = {"query": query, "urls": urls_list}
             yield f"data: {json.dumps({'step': 'urls_extracted', 'urls': urls_dict})}\n\n"
-            results["news"] = news_results
+            
+            for r in news_results[:3]:
+                url = r["url"]
+                snippet = r.get("snippet", "")
+                yield f"data: {json.dumps({'step': 'partial', 'entity': primary_entity, 'url': url})}\n\n"
+                try:
+                    summarized_results = await process_news_url(parsed, url, fallback_text=snippet)
+                    if summarized_results:
+                        results[primary_entity].extend(summarized_results)
+                except Exception as e:
+                    logger.error("ORCHESTRATOR", f"Error processing news URL {url}: {e}")
+
+            if primary_entity in results:
+                results[primary_entity].sort(key=lambda x: x.get("date") if x.get("date") else "0000-00-00", reverse=True)
+
+            yield f"data: {json.dumps({'step': 'processing', 'message': 'Distilling News...'})}\n\n"
+            results = group_variants_and_persist(results)
             yield f"data: {json.dumps({'step': 'result', 'source': 'web', 'parsed': parsed, 'results': results, 'urls': urls_dict})}\n\n"
             return
 
-        # Select fact cascade domains
+        # 4. View substructure (handled by layout suggestion in frontend)
+        # Select fact cascade domains for tech products
         if query_type == "tech_laptop":
             fact_cascade_domains = ["notebookcheck.net", "wikipedia.org", "rtings.com"]
-        else:
+        elif query_type == "tech_phone":
             fact_cascade_domains = ["gsmarena.com", "wikipedia.org", "devicespecifications.com"]
+        else:
+            fact_cascade_domains = None # Global search mode
 
-        if entities:
+        # ---- LOCAL PRICE OPTIMIZATION ----
+        if parsed.get("attribute") == "price" and locality.get("code"):
+            from backend.domains.tech import SHOPPING_DOMAINS
+            regional_shops = SHOPPING_DOMAINS.get(locality["code"], SHOPPING_DOMAINS["GLOBAL"])
+            if fact_cascade_domains is None:
+                fact_cascade_domains = regional_shops
+            else:
+                fact_cascade_domains = regional_shops + fact_cascade_domains
+            logger.info("ORCHESTRATOR", f"Local Price Flow: Injecting {regional_shops}")
+
+        if entities and fact_cascade_domains:
+            # Trusted Product Flow
             for entity in entities:
                 logger.info("ORCHESTRATOR", f"Processing entity: {entity}")
                 extracted_results = []

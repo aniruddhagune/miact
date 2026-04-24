@@ -20,8 +20,42 @@ class URLFilter:
         r"tiktok\.com", r"youtube\.com/watch\?v=", r"/search[\?#]",
         r"gsmarena\.com/res\.php", r"gsmarena\.com/search\.php",
         r"/login", r"/signup", r"/register", r"/account", r"/profile",
-        r"forum\.", r"forums\.", r"/tags/", r"/tag/", r"\.pdf$"
+        r"forum\.", r"forums\.", r"/tags/", r"/tag/", r"\.pdf$",
+        r"pinterest\.com", r"linkedin\.com", r"quora\.com",
+        r"amazon\..*/s\?", r"flipkart\.com/search\?", r"ebay\.com/sch/",
+        r"\.xml$", r"\.json$", r"\.rss$",
+        # Language Guards: Block common non-English subdomains
+        r"^(?:https?://)?(?:hi|fr|es|de|it|pt|ru|zh|ja|ko|ar|bn|mr|te|ta|ml|kn)\."
     ]
+
+    @staticmethod
+    def normalize_url(url: str) -> str:
+        """
+        Strips tracking parameters, fragments, and normalizes subdomains.
+        E.g. "https://m.gsmarena.com/apple_iphone_15-12559.php?utm_source=foo#comments"
+        -> "https://www.gsmarena.com/apple_iphone_15-12559.php"
+        """
+        try:
+            parsed = urlparse(url)
+            # 1. Normalize Host (remove mobile subdomains)
+            host = parsed.netloc.lower()
+            if host.startswith("m."):
+                host = host[2:]
+            if not host.startswith("www.") and host.count('.') == 1: # e.g. gsmarena.com -> www.gsmarena.com
+                # Optional: standardize to www for consistency
+                # but keep it simple: just ensured it's not 'm.'
+                pass
+            
+            # 2. Reconstruct without parameters or fragments
+            clean_url = f"{parsed.scheme}://{host}{parsed.path}"
+            
+            # 3. Remove trailing slash
+            if clean_url.endswith("/") and len(parsed.path) > 1:
+                clean_url = clean_url[:-1]
+                
+            return clean_url
+        except:
+            return url
 
     @staticmethod
     def classify_url(url: str) -> str:
@@ -70,9 +104,16 @@ class URLFilter:
 
     @staticmethod
     def is_worth_scraping(url: str, category_needed: str = None) -> bool:
+        """
+        Check if a URL is worth scraping.
+        Note: We check the blacklist against the RAW url to catch parameter-based noise.
+        """
+        u_lower = url.lower()
+        for pattern in URLFilter.BLACKLIST_PATTERNS:
+            if re.search(pattern, u_lower):
+                return False
+        
         category = URLFilter.classify_url(url)
-        if category == "irrelevant":
-            return False
         if category_needed and category != category_needed:
             return False
         return True

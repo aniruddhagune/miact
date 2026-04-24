@@ -23,9 +23,9 @@ def run_all():
     print(f"🔍 Debug Services: {args.services}")
     print(f"📝 Log All to File: {'No' if args.log_selected_only else 'Yes'}")
 
-    # 1. Start Backend (FastAPI)
+    # 1. Start Backend (FastAPI) via UV
     backend_cmd = [
-        os.path.join("venv", "Scripts", "python.exe"),
+        "uv", "run", "python",
         "-m", "uvicorn",
         "backend.main:app",
         "--reload",

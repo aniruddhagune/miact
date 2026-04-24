@@ -26,6 +26,11 @@ DOMAIN_SIGNALS = {
         "news", "latest", "update", "report", "incident",
         "war", "summit", "meeting", "festival", "ceremony",
     ],
+    "general": [
+        "weather", "who is", "who was", "where is", "when did",
+        "how to", "why does", "meaning of", "definition",
+        "recipe", "distance", "time in", "population",
+    ]
 }
 
 # Known phone brands — used for entity-type inference from name alone

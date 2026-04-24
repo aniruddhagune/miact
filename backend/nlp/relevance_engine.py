@@ -63,7 +63,7 @@ def extract_core_keywords(text: str) -> set[str]:
                 keywords.add(token.lemma_)
     return keywords
 
-def calculate_relevance_score(query: str, title: str, url: str = "") -> tuple[float, str, list[str]]:
+def calculate_relevance_score(query: str, title: str, url: str = "", snippet: str = "") -> tuple[float, str, list[str]]:
     """
     Calculate a 0-1 relevance score, category, and trace steps.
     """
@@ -108,7 +108,13 @@ def calculate_relevance_score(query: str, title: str, url: str = "") -> tuple[fl
     is_trusted = any(d in u_lower for d in ["gsmarena.com", "wikipedia.org", "devicespecifications.com", "theverge.com", "notebookcheck.net"])
 
     if q_numbers:
-        if not (q_numbers & t_numbers):
+        # STRICT MISMATCH: If query has 15 but title has 14, and 14 is NOT in query
+        mismatch_numbers = t_numbers - q_numbers
+        if mismatch_numbers and not (q_numbers & t_numbers):
+             # Hard penalty for explicitly wrong model numbers
+             base_score *= 0.1
+             trace.append(f"STRICT Penalty: Explicit model number mismatch. Found {t_numbers} while query expects {q_numbers}")
+        elif not (q_numbers & t_numbers):
             # Leniency for trusted domains if they match on text but miss a ID match
             penalty = 0.4 if is_trusted else 0.8
             base_score *= (1 - penalty) 
@@ -117,6 +123,15 @@ def calculate_relevance_score(query: str, title: str, url: str = "") -> tuple[fl
             penalty = 0.2 if is_trusted else 0.4
             base_score *= (1 - penalty)
             trace.append(f"Penalty -{penalty*100}%: Partial model number match")
+
+    # -- HEURISTIC: Snippet Context Boost --
+    if snippet and base_score < 0.9:
+        s_keywords = extract_core_keywords(snippet)
+        s_overlap = (q_keywords - t_keywords) & s_keywords
+        if s_overlap:
+            bonus = 0.1 * len(s_overlap)
+            base_score += bonus
+            trace.append(f"Snippet Bonus +{bonus:.1f}: Found context keywords {s_overlap}")
 
     # -- HEURISTIC: Variant Precision --
     q_variants = {w.lower() for w in query.split() if w.lower() in DESCRIPTOR_TERMS}
@@ -153,6 +168,15 @@ def calculate_relevance_score(query: str, title: str, url: str = "") -> tuple[fl
         base_score = base_score + bonus
         trace.append(f"Bonus +{bonus}: Exact sequence match.")
         
+    # -- FINAL SAFETY: Explicit Model Mismatch Capping --
+    if q_numbers and t_numbers:
+        mismatch_numbers = t_numbers - q_numbers
+        if mismatch_numbers and not (q_numbers & t_numbers):
+             # If they disagree on the model number entirely, cap the score to 0.2
+             if base_score > 0.2:
+                 trace.append(f"FINAL CAP: Discarding result due to model mismatch ({t_numbers} vs {q_numbers})")
+                 base_score = 0.2
+
     final_score = max(0.0, round(base_score, 3))
     logger.debug("NLP", f"Relevance Score for '{title[:40]}...': {final_score}")
     return final_score, category, trace
@@ -161,3 +185,38 @@ def is_highly_relevant(query: str, title: str, threshold: float = 0.4) -> bool:
     """Filter helper."""
     score, category, trace = calculate_relevance_score(query, title, "")
     return score >= threshold
+
+def is_english_text(text: str) -> bool:
+    """
+    Check if a text snippet is likely English using a featherweight heuristic.
+    Specifically blocks common non-Latin scripts (Hindi, Arabic, Chinese, etc.)
+    while allowing tech specs (numbers, punctuation, Latin letters).
+    """
+    if not text or len(text) < 10:
+        return True # Too short to judge reliably, assume OK
+    
+    text_lower = text.lower()
+    
+    # 1. Block known non-Latin Unicode ranges (simplified)
+    # Hindi (Devanagari): \u0900-\u097F
+    # Arabic: \u0600-\u06FF
+    # Chinese/Japanese/Korean: \u4E00-\u9FFF
+    # Cyrillic: \u0400-\u04FF
+    non_latin_pattern = re.compile(r"[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u0400-\u04FF]")
+    if non_latin_pattern.search(text):
+        return False
+
+    # 2. Stopword check for conversational English
+    english_stopwords = {"the", "and", "is", "of", "to", "in", "it", "with", "for", "on", "was", "at", "by", "an", "be"}
+    words = set(re.findall(r"\b[a-z]{2,}\b", text_lower))
+    if words.intersection(english_stopwords):
+        return True
+
+    # 3. Density check for tech specs (lenient)
+    # If it's mostly letters, numbers, and standard symbols, it's fine.
+    # We already blocked non-Latin scripts above.
+    latin_chars = len(re.findall(r"[a-z0-9]", text_lower))
+    total_chars = len(re.sub(r"\s+", "", text_lower))
+    latin_density = latin_chars / total_chars if total_chars > 0 else 0
+    
+    return latin_density > 0.5 # Very lenient now since non-latin scripts are blocked

@@ -3,7 +3,10 @@ import httpx
 import os
 import datetime
 from backend.utils.logger import logger
-from backend.config.variables import OLLAMA_URL, OLLAMA_MODEL_INTENT, AI_PROVIDER
+from backend.config.variables import (
+    OLLAMA_URL, OLLAMA_MODEL_INTENT, AI_PROVIDER, 
+    NATIVE_MODEL_INTENT, NATIVE_MODEL_SUMMARY
+)
 
 # Providers
 PROV_NATIVE = "native"
@@ -18,13 +21,13 @@ _NATIVE_MODELS = {
 async def _get_native_intent_model():
     if _NATIVE_MODELS["intent"] is None:
         try:
-            logger.info("SYSTEM", "Loading Featherweight Intent Model (BERT-Tiny)...")
+            logger.info("SYSTEM", f"Loading Featherweight Intent Model ({NATIVE_MODEL_INTENT})...")
             start = datetime.datetime.now()
             from transformers import pipeline
             # BERT-Tiny is ~18MB, extremely fast on i3 CPU
             _NATIVE_MODELS["intent"] = pipeline(
                 "text-classification", 
-                model="prajjwal1/bert-tiny", 
+                model=NATIVE_MODEL_INTENT, 
                 device=-1 # Force CPU
             )
             duration = (datetime.datetime.now() - start).total_seconds()
@@ -37,13 +40,13 @@ async def _get_native_intent_model():
 async def _get_native_summary_model():
     if _NATIVE_MODELS["summary"] is None:
         try:
-            logger.info("SYSTEM", "Loading Featherweight Summary Model (T5-Small)...")
+            logger.info("SYSTEM", f"Loading Featherweight Summary Model ({NATIVE_MODEL_SUMMARY})...")
             start = datetime.datetime.now()
             from transformers import pipeline
             # T5-Small is ~240MB, but very capable for news
             _NATIVE_MODELS["summary"] = pipeline(
                 "summarization", 
-                model="t5-small", 
+                model=NATIVE_MODEL_SUMMARY, 
                 device=-1 # Force CPU
             )
             duration = (datetime.datetime.now() - start).total_seconds()

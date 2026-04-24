@@ -1,6 +1,7 @@
 from backend.database.helpers import get_or_create_entity, get_or_create_source, create_document_if_not_exists
 from backend.database.attribute_repository import insert_attribute
 from backend.domains.regions import REGIONS, resolve_region
+from backend.services.conflict_resolver import resolve_conflicts
 import re
 from backend.utils.logger import logger
 
@@ -182,17 +183,8 @@ def group_variants_and_persist(results_dict: dict, ai_summary: str = None):
                     "source": sources_m[0] if sources_m else None
                 })
         
-        # ---- FINAL DEDUPLICATION & ORDERING ----
-        unique_final = []
-        seen_keys = set()
-        
-        for item in other_items:
-            key = (item["aspect"].lower().strip(), str(item["value"]).lower().strip())
-            if key not in seen_keys:
-                seen_keys.add(key)
-                unique_final.append(item)
-        
-        other_items = unique_final
+        # ---- CONFLICT RESOLUTION & DEDUPLICATION ----
+        other_items = resolve_conflicts(other_items)
                 
         # --- ASPECT SCORING LOGIC ---
         # Baseline: 5.0 (neutral). Each aspect's mean compound score adjusts it.
@@ -228,6 +220,29 @@ def group_variants_and_persist(results_dict: dict, ai_summary: str = None):
 
         logger.debug("PROCESSING", f"Persisting {len(other_items)} attributes to database")
         for r in other_items:
+            # Handle conflict objects by persisting each conflicting value
+            if r.get("type") == "conflict":
+                for cv in r.get("conflicting_values", []):
+                    try:
+                        url = cv.get("source")
+                        if not url: continue
+                        source_id = get_or_create_source(url)
+                        create_document_if_not_exists(url, source_id)
+                        ent_id = get_or_create_entity(entity_name)
+                        
+                        insert_attribute(
+                            entity_id=ent_id,
+                            document_id=url,
+                            aspect=r.get("aspect", ""),
+                            value=str(cv.get("value", "")),
+                            unit=r.get("unit"),
+                            attr_type="table", # Conflicts are factual
+                            confidence_score=1.0
+                        )
+                    except Exception as e:
+                        logger.error("PROCESSING", f"Persist conflict failed for {url}: {e}")
+                continue
+
             url = r.get("source")
             if not url:
                 continue

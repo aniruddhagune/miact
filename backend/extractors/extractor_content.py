@@ -42,6 +42,16 @@ async def extract_content(url: str):
         result = await asyncio.to_thread(amazon_extract, url)
         if result: return result
 
+    # ---- NEWS DISPATCH ----
+    from backend.domains.news import NEWS_GENERIC_DOMAINS, NEWS_FINANCIAL_DOMAINS, NEWS_BREAKING_DOMAINS
+    ALL_NEWS = NEWS_GENERIC_DOMAINS + NEWS_FINANCIAL_DOMAINS + NEWS_BREAKING_DOMAINS
+    if any(d in url for d in ALL_NEWS):
+        logger.debug("EXTRACTOR", "Dispatching to specialized News extractor")
+        from backend.extractors.site_extractors.news_extractor import extract as news_extract
+        result = await asyncio.to_thread(news_extract, url)
+        if result and len(result.get("text", "")) > 500:
+            return result
+
     # ---- PRIMARY: Newspaper3k ----
     from backend.services.http_client import get as http_get
     try:
@@ -75,12 +85,22 @@ async def extract_content(url: str):
 
     # ---- TERTIARY: Playwright (Dynamic Content) ----
     # Only use for domains known to require JS or after all else fails
-    # (Optional: check domain against list)
     try:
         logger.info("EXTRACTOR", f"Attempting dynamic scrape via Playwright for: {url}")
         dynamic_result = await scrape_dynamic(url)
-        if dynamic_result and len(dynamic_result.get("text", "")) > 500:
-            return dynamic_result
+        if dynamic_result and dynamic_result.get("html"):
+            # If it's a news site, use the news_extractor to clean the HTML
+            from backend.domains.news import NEWS_GENERIC_DOMAINS, NEWS_FINANCIAL_DOMAINS, NEWS_BREAKING_DOMAINS
+            ALL_NEWS = NEWS_GENERIC_DOMAINS + NEWS_FINANCIAL_DOMAINS + NEWS_BREAKING_DOMAINS
+            if any(d in url for d in ALL_NEWS):
+                from backend.extractors.site_extractors.news_extractor import extract as news_extract
+                cleaned = await asyncio.to_thread(news_extract, url, html=dynamic_result["html"])
+                if cleaned and len(cleaned.get("text", "")) > 500:
+                    cleaned["method"] = "playwright_news_cleaned"
+                    return cleaned
+            
+            if len(dynamic_result.get("text", "")) > 500:
+                return dynamic_result
     except Exception as e:
         logger.error("EXTRACTOR", f"Playwright dynamic scrape failed for {url}: {e}\n{traceback.format_exc()}")
 

@@ -28,11 +28,11 @@ To reduce research fatigue by providing a consolidated view of objective facts a
 - PostgreSQL
 
 ### Backend Setup
-1. Navigate to the `backend` directory.
-2. Create a virtual environment: `python -m venv venv`.
-3. Activate the environment and install dependencies: `pip install -r requirements.txt`.
-4. Install the spaCy model: `python -m spacy download en_core_web_md`.
-5. Configure your database credentials in a `.env` file in the root directory (see `.env.example`).
+1. Ensure `uv` is installed (`pip install uv` or see [uv docs](https://github.com/astral-sh/uv)).
+2. From the root directory, install dependencies and set up the environment: `uv sync`.
+3. Install the spaCy model: `uv run python -m spacy download en_core_web_md`.
+4. Configure your database credentials in a `.env` file in the root directory.
+5. Run the full stack: `python run.py`.
 
 ### Frontend Setup
 1. Navigate to the `frontend` directory.

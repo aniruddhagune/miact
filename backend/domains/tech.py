@@ -37,10 +37,12 @@ TRUSTED_DOMAINS_GENERAL = [
 # Legacy flat list — kept for backward compatibility
 TRUSTED_DOMAINS = TRUSTED_DOMAINS_PHONE + TRUSTED_DOMAINS_LAPTOP
 
-SHOPPING_DOMAINS = [
-    "amazon.in",
-    "flipkart.com"
-]
+SHOPPING_DOMAINS = {
+    "IN": ["amazon.in", "flipkart.com", "gadgets360.com"],
+    "USA": ["amazon.com", "bestbuy.com", "walmart.com"],
+    "UK": ["amazon.co.uk", "currys.co.uk", "argos.co.uk"],
+    "GLOBAL": ["amazon.com"]
+}
 
 
 def get_trusted_domains(query_type: str) -> list:

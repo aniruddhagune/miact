@@ -17,8 +17,15 @@ GENERAL_GROUPS = {
     "Works": ["books", "writings", "notable works", "publications", "awards", "achievements"]
 }
 
+NEWS_GROUPS = {
+    "AI News Highlights": ["ai highlights", "summary", "brief summary", "updates"],
+    "Regional News": ["india", "usa", "global", "local"],
+    "News Metadata": ["published", "author", "source_type"]
+}
+
 def get_unified_config():
     return {
         "tech": TECH_GROUPS,
-        "general": GENERAL_GROUPS
+        "general": GENERAL_GROUPS,
+        "news": NEWS_GROUPS
     }

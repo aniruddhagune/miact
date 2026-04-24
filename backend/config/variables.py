@@ -30,3 +30,7 @@ AI_PROVIDER = os.getenv("AI_PROVIDER", "native") # "native" or "ollama"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL_INTENT = os.getenv("OLLAMA_MODEL_INTENT", "qwen2.5:0.5b")
 OLLAMA_MODEL_SUMMARY = os.getenv("OLLAMA_MODEL_SUMMARY", "qwen2.5:0.5b")
+
+# Native (transformers) models
+NATIVE_MODEL_INTENT = os.getenv("NATIVE_MODEL_INTENT", "prajjwal1/bert-tiny")
+NATIVE_MODEL_SUMMARY = os.getenv("NATIVE_MODEL_SUMMARY", "t5-small")
