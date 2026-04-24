@@ -1,4 +1,4 @@
-from backend.services.extractors.amazon import parse_html
+from backend.extractors.site_extractors.amazon import parse_html
 
 
 def load_amazon_fixture() -> tuple[str, str]:

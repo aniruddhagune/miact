@@ -11,7 +11,7 @@ from database.attribute_repository import insert_attribute
 from backend.extractors.extractor_data import extract_attributes
 
 from backend.extractors.detector_subjects import *
-from services.utils import *
+from backend.utils.utils import *
 
 # ---- INPUT ----
 query = "oneplus 9 vs oneplus 9 pro"

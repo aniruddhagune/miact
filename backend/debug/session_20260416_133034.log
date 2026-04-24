@@ -1,4 +1,0 @@
-{"timestamp": "2026-04-16 13:30:34", "level": "INFO", "service": "GLOBAL", "message": "Logger initialized. New session started."}
-{"timestamp": "2026-04-16 13:30:43", "level": "INFO", "service": "SYSTEM", "message": "MIACT Backend starting up..."}
-{"timestamp": "2026-04-16 13:30:43", "level": "INFO", "service": "DATABASE", "message": "Initializing database schema..."}
-{"timestamp": "2026-04-16 13:30:43", "level": "INFO", "service": "DATABASE", "message": "Database schema initialized successfully."}

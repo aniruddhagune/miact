@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append('.')
 
-from backend.services.utils import get_manual_urls
+from backend.utils.utils import get_manual_urls
 
 def test():
     cases = [

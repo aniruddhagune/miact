@@ -3,7 +3,7 @@ from backend.extractors.extractor_content import extract_content
 from backend.services.mapper_domain import detect_domain
 from backend.extractors.detector_subjects import extract_subjects, build_subject_aliases, detect_subjects, is_shared_context, split_comparison
 from backend.extractors.extractor_data import extract_attributes, extract_tables, parse_table_numeric
-from backend.services.utils import deduplicate_attributes
+from backend.utils.utils import deduplicate_attributes
 from backend.domains.opinion_aspects import map_to_canonical_aspect
 from backend.utils.logger import logger
 import asyncio
@@ -105,7 +105,7 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
             if key in seen_objective_aspects: continue
             seen_objective_aspects.add(key)
 
-            from backend.services.utils import expand_variants
+            from backend.utils.utils import expand_variants
             for v in expand_variants(row["aspect"], row["value"]):
                 results.append({
                     "entity": subject, "aspect": row["aspect"],

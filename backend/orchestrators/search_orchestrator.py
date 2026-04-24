@@ -15,7 +15,7 @@ from backend.utils.logger import logger
 
 async def execute_search(query: str, t: str = None):
     logger.info("ORCHESTRATOR", f"Starting search execution for: '{query}'")
-    from backend.services.utils import get_manual_urls
+    from backend.utils.utils import get_manual_urls
     manual_urls = get_manual_urls(query)
     parsed = parse_query(query)
 

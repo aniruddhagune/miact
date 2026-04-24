@@ -4,7 +4,7 @@ from services.mapper_domain import detect_domain
 from services.detector_subjects import extract_subjects, build_subject_aliases
 
 from services.extractor_data import extract_attributes
-from services.utils import deduplicate_attributes
+from backend.utils.utils import deduplicate_attributes
 
 from database.attribute_repository import insert_attribute
 

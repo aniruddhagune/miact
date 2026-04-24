@@ -4,7 +4,7 @@ from services.detector_subjects import extract_subjects
 
 from services.extractor_content import extract_content
 from services.extractor_data import extract_attributes
-from services.utils import deduplicate_attributes
+from backend.utils.utils import deduplicate_attributes
 
 from services.search_service import fetch_search_results
 

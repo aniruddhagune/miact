@@ -1,4 +1,4 @@
-from backend.services.extractors.notebookcheck import parse_html
+from backend.extractors.site_extractors.notebookcheck import parse_html
 
 
 def load_notebookcheck_fixture() -> tuple[str, str]:
