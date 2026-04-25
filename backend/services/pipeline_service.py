@@ -79,10 +79,11 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
 
     logger.debug("PIPELINE", f"Successfully retrieved {len(clean_text_content)} chars from {url}")
     results = []
-    
+
     # If it's a snippet, we'll label the aspect as "Summary" so it's visible
     if data.get("is_snippet"):
         logger.debug("PIPELINE", "Processing as Snippet Fallback")
+
         for subject in subjects:
             results.append({
                 "entity": subject,
@@ -201,7 +202,7 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
 
 async def process_news_url(parsed: dict, url: str, fallback_text: str = None) -> list:
     """
-    Extracts a full news article and generates an AI summary.
+    Extracts a full news article, generates an AI summary, and extracts structured facts.
     """
     logger.info("PIPELINE", f"Processing News URL: {url}")
     
@@ -209,10 +210,10 @@ async def process_news_url(parsed: dict, url: str, fallback_text: str = None) ->
     data = await extract_content(url)
     
     clean_text_content = ""
-    if data and data.get("text"):
+    if data and data.get("text") and len(data["text"]) > 100:
         clean_text_content = data["text"]
     elif fallback_text:
-        logger.warning("PIPELINE", f"Extraction failed for news URL {url}. Using fallback snippet.")
+        logger.warning("PIPELINE", f"Extraction failed or too short for news URL {url}. Using fallback snippet.")
         clean_text_content = fallback_text
     
     if not clean_text_content:
@@ -226,17 +227,75 @@ async def process_news_url(parsed: dict, url: str, fallback_text: str = None) ->
     # Summarize via AI
     summary = await summarize_news_ai(clean_text_content)
     
+    # Extract Facts via AI
+    from backend.services.ai_service import categorize_news_ai
+    facts = await categorize_news_ai(clean_text_content)
+    
     # Determine Entity
     entities = parsed.get("entities", [])
-    target_entity = entities[0] if entities else "News Summary"
+    target_entity = entities[0] if entities else "News"
     
     published_at = data.get("published_at") if data else None
+    title = data.get("title", "News Article") if data else "News Article"
 
-    return [{
+    results = []
+    
+    # 1. The Summary
+    results.append({
         "entity": target_entity,
-        "aspect": "AI Highlights",
-        "value": summary,
-        "type": "table",
+        "aspect": f"Summary: {title}",
+        "value": summary or "Summary unavailable",
+        "type": "news", 
         "source": url,
         "date": published_at
-    }]
+    })
+    
+    # 2. Structured Facts
+    if facts:
+        for key, aspect in [("category", "News Category"), ("involved_people", "People Involved"), ("places", "Places Affected"), ("cause", "Event Cause")]:
+            if facts.get(key) and facts[key] != "N/A":
+                results.append({
+                    "entity": target_entity, "aspect": aspect, "value": facts[key],
+                    "type": "news", "source": url
+                })
+
+    return results
+
+async def process_research_url(parsed: dict, url: str) -> list:
+    """
+    Performs deep research on a topic, extracting detailed structured info.
+    """
+    logger.info("PIPELINE", f"Deep Researching URL: {url}")
+    data = await extract_content(url)
+    
+    if not data or not data.get("text"):
+        return []
+
+    # AI Fact Extraction for Research
+    from backend.services.ai_service import categorize_news_ai
+    facts = await categorize_news_ai(data["text"])
+    
+    entities = parsed.get("entities", [])
+    target_entity = entities[0] if entities else "Research"
+    
+    results = []
+    # Add a summary
+    summary = await summarize_news_ai(data["text"])
+    results.append({
+        "entity": target_entity,
+        "aspect": f"Research: {data.get('title', 'Article')}",
+        "value": summary,
+        "type": "research",
+        "source": url
+    })
+    
+    # Add Facts
+    if facts:
+        for key, aspect in [("category", "Context"), ("involved_people", "Key Figures"), ("places", "Key Locations"), ("cause", "Root Cause")]:
+            if facts.get(key) and facts[key] != "N/A":
+                results.append({
+                    "entity": target_entity, "aspect": aspect, "value": facts[key],
+                    "type": "research", "source": url
+                })
+                
+    return results

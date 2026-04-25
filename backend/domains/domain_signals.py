@@ -25,6 +25,8 @@ DOMAIN_SIGNALS = {
     "news_generic": [
         "news", "latest", "update", "report", "incident",
         "war", "summit", "meeting", "festival", "ceremony",
+        "revolt", "protest", "riot", "happened", "situation",
+        "event", "current", "today", "yesterday",
     ],
     "general": [
         "weather", "who is", "who was", "where is", "when did",

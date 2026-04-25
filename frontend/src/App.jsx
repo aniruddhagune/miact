@@ -258,6 +258,12 @@ function App() {
             </a>
          );
       }
+      
+      // Don't split long paragraphs (likely news summaries or descriptions)
+      if (strVal.length > 120) {
+         return <span className="text-major leading-relaxed block py-1">{strVal}</span>;
+      }
+
       const splitSafe = strVal.split(/(?<=\D),\s*|,\s+(?=\D)/);
       const parts = splitSafe.length > 1 ? splitSafe : [strVal];
       return (
@@ -371,6 +377,14 @@ function App() {
                   q.status = "Analyzing URLs...";
                } else if (data.step === "partial") {
                   q.status = `Processing: ${data.url.substring(0, 30)}...`;
+               } else if (data.step === "partial_result") {
+                  q.results = {
+                     facts: { ...(q.results?.facts || {}), ...data.results.facts },
+                     research: { ...(q.results?.research || {}), ...data.results.research },
+                     analysis: { ...(q.results?.analysis || {}), ...data.results.analysis }
+                  };
+                  q.urls = data.urls || q.urls;
+                  q.status = "Receiving updates...";
                } else if (data.step === "ai_summary") {
                   q.aiSummary = data.summary;
                   q.status = "Generated AI Insight";

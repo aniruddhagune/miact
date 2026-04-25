@@ -27,7 +27,9 @@ def get_trusted_domains(query_type: str = "news_generic") -> list:
 
 NEWS_KEYWORDS = [
     "news", "latest", "update", "war", "election",
-    "launch", "announcement", "report"
+    "launch", "announcement", "report", "revolt", "protest",
+    "riot", "happened", "yesterday", "today", "breaking",
+    "incident", "event", "situation", "current"
 ]
 
 NEWS_CATEGORIES = {

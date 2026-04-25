@@ -94,6 +94,58 @@ async def _classify_intent_native(query: str):
         "mode": mode
     }
 
+async def categorize_news_ai(content: str):
+    """
+    Extracts structured data from news content: Cause, Involved People, Places, Category.
+    """
+    provider = globals().get("AI_PROVIDER", PROV_NATIVE)
+    
+    if provider == PROV_OLLAMA:
+        return await _categorize_news_ollama(content)
+    else:
+        return await _categorize_news_native(content)
+
+async def _categorize_news_native(content: str):
+    # Lightweight fallback for native: uses keywords to guess categories
+    content_l = content.lower()
+    categories = []
+    
+    # Categorization logic
+    if any(k in content_l for k in ["court", "legal", "law", "judge", "lawsuit"]):
+        categories.append("Legal")
+    if any(k in content_l for k in ["geopolitical", "international", "summit", "relations", "treaty"]):
+        categories.append("Geopolitical")
+    if any(k in content_l for k in ["science", "research", "discovery", "space"]):
+        categories.append("Science")
+    if any(k in content_l for k in ["market", "stock", "economy", "finance"]):
+        categories.append("Financial")
+        
+    # We return a dict for the pipeline to use
+    return {
+        "category": categories[0] if categories else "General News",
+        "involved_people": "N/A", # Hard for small T5 to extract without specific NER
+        "places": "N/A",
+        "cause": "N/A"
+    }
+
+async def _categorize_news_ollama(content: str):
+    url = globals().get("OLLAMA_URL", "http://localhost:11434/api/generate")
+    model = "qwen2.5:0.5b"
+    system_prompt = "Extract news facts in JSON: category (legal/geopolitical/etc), involved_people (list), places (list), cause (short string)."
+    payload = {
+        "model": model,
+        "prompt": f"Analyze this news and extract facts: {content}",
+        "system": system_prompt,
+        "stream": False,
+        "format": "json"
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, json=payload)
+            return json.loads(resp.json().get("response", "{}"))
+    except Exception:
+        return {}
+
 async def _summarize_news_native(content: str):
     try:
         summarizer = await _get_native_summary_model()
@@ -101,7 +153,7 @@ async def _summarize_news_native(content: str):
             return content[:200] + "..."
             
         # Truncate content to fit T5's 512 token limit for speed on i3
-        input_text = content[:1000] 
+        input_text = content[:2000] 
         summary = summarizer(input_text, max_length=150, min_length=30, do_sample=False)
         return summary[0]['summary_text']
     except Exception as e:
@@ -131,12 +183,14 @@ async def _classify_intent_ollama(query: str):
         logger.error("NLP", f"Ollama Intent failed: {e}")
         return None
 
-async def _summarize_news_ollama(content: str):
+async def summarize_news_ollama(content: str):
     url = globals().get("OLLAMA_URL", "http://localhost:11434/api/generate")
     model = "qwen2.5:0.5b"
+    system_prompt = "Summarize the news article. Use double newlines between paragraphs. If there are key points, use bullet points starting with '- '."
     payload = {
         "model": model,
         "prompt": f"Summarize this news: {content}",
+        "system": system_prompt,
         "stream": False
     }
     try:
@@ -145,3 +199,33 @@ async def _summarize_news_ollama(content: str):
             return resp.json().get("response")
     except Exception:
         return None
+
+async def generate_global_news_summary(summaries: list):
+    """
+    Takes multiple individual article summaries and creates one master overview.
+    """
+    if not summaries:
+        return None
+        
+    combined_text = "\n---\n".join(summaries)
+    provider = globals().get("AI_PROVIDER", PROV_NATIVE)
+    
+    if provider == PROV_OLLAMA:
+        url = globals().get("OLLAMA_URL", "http://localhost:11434/api/generate")
+        model = "qwen2.5:0.5b"
+        system_prompt = "You are a news editor. Synthesize these multiple news summaries into one single, cohesive Executive Summary. Use clear paragraphs and bullet points for key events."
+        payload = {
+            "model": model,
+            "prompt": f"Synthesize these reports into one master summary:\n\n{combined_text}",
+            "system": system_prompt,
+            "stream": False
+        }
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(url, json=payload)
+                return resp.json().get("response")
+        except Exception:
+            return "Unable to generate master summary."
+    else:
+        # Native fallback: just join them with better formatting
+        return "\n\n".join([f"• {s}" for s in summaries[:3]])

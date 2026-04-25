@@ -39,7 +39,7 @@ class PlaywrightService:
             self.browser = None
             logger.info("SCRAPER", "Playwright browser closed")
 
-    async def scrape_url(self, url: str, timeout: int = 30000):
+    async def scrape_url(self, url: str, timeout: int = 45000):
         """
         Scrape a URL using Playwright for dynamic content.
         """

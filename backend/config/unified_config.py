@@ -18,7 +18,7 @@ GENERAL_GROUPS = {
 }
 
 NEWS_GROUPS = {
-    "AI News Highlights": ["ai highlights", "summary", "brief summary", "updates"],
+    "AI News Highlights": ["ai highlights", "summary", "brief summary", "updates", "news category", "event cause", "people involved", "places affected"],
     "Regional News": ["india", "usa", "global", "local"],
     "News Metadata": ["published", "author", "source_type"]
 }

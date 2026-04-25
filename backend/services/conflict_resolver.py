@@ -56,8 +56,14 @@ def resolve_conflicts(items: list) -> list:
     final_items = []
 
     for aspect, aspect_items in by_aspect.items():
-        # 0. Check for Multi-Perspective Aspects
-        if aspect.lower() in MULTI_PERSPECTIVE_ASPECTS:
+        # 0. Check for Multi-Perspective (News/Research)
+        # Any item with type 'news' or 'research' is considered multi-perspective
+        # or if the aspect is in the whitelist or starts with Summary:
+        is_multi = any(i.get("type") in ["news", "research"] for i in aspect_items) or \
+                   aspect.lower() in MULTI_PERSPECTIVE_ASPECTS or \
+                   aspect.lower().startswith("summary:")
+                   
+        if is_multi:
             final_items.extend(aspect_items)
             continue
 
