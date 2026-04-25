@@ -316,42 +316,16 @@ function App() {
                }
             });
          },
-         { threshold: [0.1, 0.4, 0.7], rootMargin: '-10% 0px -20% 0px' }
+         { threshold: [0.1, 0.4, 0.7], rootMargin: '-10% 0px -20% 0px' } 
       );
 
-      const containers = document.querySelectorAll('.result-container');
+      const containers = document.querySelectorAll('.result-container'); 
       containers.forEach((el) => observer.observe(el));
 
       return () => observer.disconnect();
    }, [queries]);
 
-   const getEnhancedUrl = (url, text) => {
-      if (!url || !text) return url;
-      try {
-         const cleanText = text.replace(/["]/g, '').replace(/[\n\r]/g, ' ').trim();
-         const words = cleanText.split(/\s+/).filter(w => w.length > 0);
-         
-         let fragment = "";
-         if (words.length > 6) {
-            const start = words.slice(0, 3).join(' ');
-            const end = words.slice(-3).join(' ');
-            fragment = `text=${encodeURIComponent(start)},${encodeURIComponent(end)}`;
-         } else {
-            fragment = `text=${encodeURIComponent(cleanText.substring(0, 80))}`;
-         }
-
-         if (url.includes(':~:text=')) return url;
-         if (url.includes('#')) {
-            return `${url}:~:${fragment}`;
-         }
-         return `${url}#:~:${fragment}`;
-      } catch {
-         return url;
-      }
-   };
-
-   const sendQuery = async () => {
-      if (!input.trim() || loading) return;
+   const sendQuery = async () => {      if (!input.trim() || loading) return;
 
       const queryText = input;
       setLoading(true);

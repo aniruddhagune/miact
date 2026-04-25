@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import argparse
+import shutil
 
 def run_all():
     parser = argparse.ArgumentParser(description="MIACT Runner with Service-Specific Debugging")
@@ -23,17 +24,40 @@ def run_all():
     print(f"🔍 Debug Services: {args.services}")
     print(f"📝 Log All to File: {'No' if args.log_selected_only else 'Yes'}")
 
-    # 1. Start Backend (FastAPI) via UV
-    backend_cmd = [
-        "uv", "run", "python",
-        "-m", "uvicorn",
-        "backend.main:app",
-        "--reload",
-        "--reload-dir", "backend",      # Only watch backend code
-        "--reload-exclude", "*.log",    # Ignore log file changes
-        "--port", "8000",
-        "--loop", "none"                # Let the application set the loop policy
-    ]
+    # Determine backend command based on available tools
+    uv_path = shutil.which("uv")
+    if uv_path:
+        print("🛠️  Using 'uv' for backend execution")
+        backend_cmd = [
+            "uv", "run", "python",
+            "-m", "uvicorn",
+            "backend.main:app",
+            "--reload",
+            "--reload-dir", "backend",
+            "--reload-exclude", "*.log",
+            "--port", "8000",
+            "--loop", "none"
+        ]
+    else:
+        # Fallback to local virtual environment or current python
+        venv_python = os.path.join("venv", "Scripts", "python.exe") if os.name == "nt" else os.path.join("venv", "bin", "python")
+        if os.path.exists(venv_python):
+            python_exe = venv_python
+            print(f"🐍 Using virtual environment python: {python_exe}")
+        else:
+            python_exe = sys.executable
+            print(f"🐍 Using current python: {python_exe}")
+        
+        backend_cmd = [
+            python_exe,
+            "-m", "uvicorn",
+            "backend.main:app",
+            "--reload",
+            "--reload-dir", "backend",
+            "--reload-exclude", "*.log",
+            "--port", "8000",
+            "--loop", "none"
+        ]
     
     print("📦 Launching Backend on http://127.0.0.1:8000")
     backend_proc = subprocess.Popen(backend_cmd, env=env)

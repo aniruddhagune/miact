@@ -69,16 +69,15 @@ async def process_query_url(parsed: dict, url: str, only_objective=False, only_s
         }
 
     if not data:
-        logger.error(f"Extraction failed completely for {url}")
+        logger.error("PIPELINE", f"Extraction failed completely for {url}")
         return None
 
     clean_text_content = data.get("text", "")
-    if clean_text_content and not is_english_text(clean_text_content):
+    if clean_text_content and not is_english_text(clean_text_content):   
         logger.warning("PIPELINE", f"LanguageGuard: Article content is non-English for {url}. Skipping.")
         return []
 
-    logger.debug(f"Successfully retrieved {len(clean_text_content)} chars from {url}")
-
+    logger.debug("PIPELINE", f"Successfully retrieved {len(clean_text_content)} chars from {url}")
     results = []
     
     # If it's a snippet, we'll label the aspect as "Summary" so it's visible
