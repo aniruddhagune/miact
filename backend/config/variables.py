@@ -8,6 +8,9 @@ load_dotenv()
 # Central configuration file for environment-specific settings.
 
 # ── Database ─────────────────────────────────────────────────
+DB_TYPE = os.getenv("DB_TYPE", "postgres") # "postgres" or "sqlite"
+SQLITE_PATH = os.getenv("SQLITE_PATH", "miact.db")
+
 DB_NAME = os.getenv("DB_NAME", "miact")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")

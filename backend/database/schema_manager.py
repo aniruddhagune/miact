@@ -1,12 +1,13 @@
 import psycopg2
-from backend.database.connection import get_connection
+import sqlite3
+from backend.database.connection import get_connection, execute_query
 from backend.utils.logger import logger
 import backend.config.variables as _vars
 
 SCHEMA_QUERIES = [
     """
     CREATE TABLE IF NOT EXISTS entities (
-        entity_id SERIAL PRIMARY KEY,
+        entity_id {pk_type},
         name TEXT UNIQUE NOT NULL,
         entity_type TEXT,
         parent_id INT REFERENCES entities(entity_id)
@@ -14,7 +15,7 @@ SCHEMA_QUERIES = [
     """,
     """
     CREATE TABLE IF NOT EXISTS sources (
-        source_id SERIAL PRIMARY KEY,
+        source_id {pk_type},
         name TEXT,
         base_url TEXT UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -32,13 +33,13 @@ SCHEMA_QUERIES = [
     """,
     """
     CREATE TABLE IF NOT EXISTS sessions (
-        session_id SERIAL PRIMARY KEY,
+        session_id {pk_type},
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """,
     """
     CREATE TABLE IF NOT EXISTS queries (
-        query_id SERIAL PRIMARY KEY,
+        query_id {pk_type},
         session_id INT REFERENCES sessions(session_id),
         query_text TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -46,7 +47,7 @@ SCHEMA_QUERIES = [
     """,
     """
     CREATE TABLE IF NOT EXISTS facts (
-        fact_id SERIAL PRIMARY KEY,
+        fact_id {pk_type},
         entity_id INT REFERENCES entities(entity_id),
         document_id TEXT REFERENCES documents(document_id),
         aspect TEXT NOT NULL,
@@ -59,7 +60,7 @@ SCHEMA_QUERIES = [
     """,
     """
     CREATE TABLE IF NOT EXISTS opinions (
-        opinion_id SERIAL PRIMARY KEY,
+        opinion_id {pk_type},
         entity_id INT REFERENCES entities(entity_id),
         document_id TEXT REFERENCES documents(document_id),
         aspect TEXT,
@@ -79,13 +80,20 @@ SCHEMA_QUERIES = [
 
 def initialize_db():
     """Create tables if they don't exist."""
-    logger.info("DATABASE", "Initializing database schema...")
+    logger.info("DATABASE", f"Initializing database schema for {_vars.DB_TYPE}...")
     conn = None
     try:
         conn = get_connection()
         cur = conn.cursor()
-        for query in SCHEMA_QUERIES:
-            cur.execute(query)
+        
+        pk_type = "SERIAL PRIMARY KEY"
+        if _vars.DB_TYPE == "sqlite":
+            pk_type = "INTEGER PRIMARY KEY AUTOINCREMENT"
+            
+        for query_template in SCHEMA_QUERIES:
+            query = query_template.format(pk_type=pk_type)
+            execute_query(cur, query)
+            
         conn.commit()
         logger.info("DATABASE", "Database schema initialized successfully.")
         return True
@@ -107,7 +115,8 @@ def drop_all_tables():
         conn = get_connection()
         cur = conn.cursor()
         for table in tables:
-            cur.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+            cascade = " CASCADE" if _vars.DB_TYPE == "postgres" else ""
+            execute_query(cur, f"DROP TABLE IF EXISTS {table}{cascade};")
         conn.commit()
         logger.info("DATABASE", "All tables dropped successfully.")
         return True

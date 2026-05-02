@@ -1,4 +1,4 @@
-from backend.database.connection import get_connection
+from backend.database.connection import get_connection, execute_query
 from backend.utils.logger import logger
 
 def fetch_from_db(parsed):
@@ -40,7 +40,7 @@ def fetch_from_db(parsed):
         params.extend(parsed["entities"])
 
     try:
-        cursor.execute(query, params)
+        execute_query(cursor, query, params)
         rows = cursor.fetchall()
         logger.info("DATABASE", f"Cache lookup complete. Found {len(rows)} records.")
     except Exception as e:

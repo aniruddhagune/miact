@@ -1,5 +1,5 @@
 import re
-from backend.database.connection import get_connection
+from backend.database.connection import get_connection, execute_query
 from backend.services.search_service import fetch_search_results_async
 from backend.utils.logger import logger
 
@@ -36,11 +36,11 @@ async def determine_canonical_name(alias: str) -> str:
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS entity_aliases (
+        execute_query(cursor, '''CREATE TABLE IF NOT EXISTS entity_aliases (
             alias TEXT PRIMARY KEY,
             canonical TEXT
         )''')
-        cursor.execute('''INSERT INTO entity_aliases (alias, canonical) VALUES (%s, %s) ON CONFLICT (alias) DO NOTHING''', (alias.lower(), canonical.lower()))
+        execute_query(cursor, '''INSERT INTO entity_aliases (alias, canonical) VALUES (%s, %s) ON CONFLICT (alias) DO NOTHING''', (alias.lower(), canonical.lower()))
         conn.commit()
     except Exception as e:
         logger.error("RESOLVER", f"Database error during alias storage: {e}")
@@ -68,14 +68,14 @@ async def resolve_canonical_entities(subjects: list[str]) -> list[str]:
     cursor = conn.cursor()
 
     try:
-        cursor.execute('''CREATE TABLE IF NOT EXISTS entity_aliases (
+        execute_query(cursor, '''CREATE TABLE IF NOT EXISTS entity_aliases (
             alias TEXT PRIMARY KEY,
             canonical TEXT
         )''')
         conn.commit()
         
         for sub in subjects:
-            cursor.execute("SELECT canonical FROM entity_aliases WHERE alias = %s", (sub.lower(),))
+            execute_query(cursor, "SELECT canonical FROM entity_aliases WHERE alias = %s", (sub.lower(),))
             row = cursor.fetchone()
             if row:
                 logger.debug("RESOLVER", f"Cache hit: '{sub}' -> '{row[0]}'")
