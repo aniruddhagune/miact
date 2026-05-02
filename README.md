@@ -1,33 +1,49 @@
-# Project Information
+# MIACT: Multi-source Information Aggregator & Comparison Tool
 
-Title: Multi-source Information Aggregator & Comparison Tool
-Aim: To make a locally executable, lightweight scraping tool utilizing NLP techniques that can be used to fetch information from multiple sources for topics of interest and compare information across sources.
+MIACT is a locally executable, lightweight data aggregation and analysis tool designed to fetch, compare, and summarize information from multiple web sources using asynchronous scraping and Natural Language Processing (NLP) techniques.
 
-# Scope:
-The system is currently limited to three domains: consumer electronics (phones and laptops) and news topics.
+## 🚀 Aim
+To reduce research fatigue by providing a consolidated view of objective facts and subjective opinions on products and news topics, highlighting conflicting claims across different sources.
 
-## Product Information (Phones & Laptops)
+## 🛠️ Tech Stack
+- **Frontend:** React (Vite) with Lucide Icons and Tailwind-inspired styling.
+- **Backend:** FastAPI (Python) for high-performance asynchronous orchestration.
+- **Database:** PostgreSQL for persistent local caching.
+- **NLP:** spaCy (Dependency Parsing) and VADER (Sentiment Analysis).
+- **Scraping:** Requests, BeautifulSoup, and Newspaper3k.
 
-- The system will collect objective specifications (e.g., processor, RAM, storage, battery, display) from a predefined set of trusted sources
-- Subjective content such as reviews, opinions, and user impressions will be extracted and analyzed separately.
-- The system will compare values across sources and highlight inconsistencies or missing data.
+## 📦 Core Features
+- **Intelligent Domain Handling:** Specialized pipelines for Consumer Electronics (Phones/Laptops) and News.
+- **Fact Cascade:** Automatically queries trusted domains like GSMArena and Wikipedia for structured specifications.
+- **Sentiment Mapping:** Extracts and groups subjective opinions by canonical aspects (e.g., "Battery", "Camera").
+- **Local Cache:** Stores results in PostgreSQL to ensure fast retrieval for repeated queries.
+- **Real-time Updates:** Uses Server-Sent Events (SSE) to show extraction progress in the UI.
+- **Debug Mode:** Detailed session logging and server-side event tracking.
 
-## News Analysis
+## 🔧 Setup & Installation
 
-- The system will collect news articles related to a given topic from multiple sources.
-- It will extract key factual statements, compare them across sources and detect conflicting claims or discrepancies.
-- Subjective language (opinions, tone) will be analyzed separately using sentiment analysis.
+### Prerequisites
+- Python 3.10+
+- Node.js & npm
+- PostgreSQL
 
-## Data Processing and Presentation
+### Backend Setup
+1. Ensure `uv` is installed (`pip install uv` or see [uv docs](https://github.com/astral-sh/uv)).
+2. From the root directory, install dependencies and set up the environment: `uv sync`.
+3. Install the spaCy model: `uv run python -m spacy download en_core_web_md`.
+4. Configure your database credentials in a `.env` file in the root directory.
+5. Run the full stack: `python run.py`.
 
-The system will:
+### Frontend Setup
+1. Navigate to the `frontend` directory.
+2. Install dependencies: `npm install`.
+3. Start the development server: `npm run dev`.
 
-- Separate objective facts from subjective opinions
-- Store processed data locally
-- Present results through a clean, browser-based interface
+## 📂 Project Structure
+- `backend/`: FastAPI application, NLP logic, and database services.
+- `frontend/`: React application and UI components.
+- `debug/`: Session-specific logs (created at runtime).
+- `diagrams/`: Architectural and class diagrams.
 
-The interface will display:
-
-- Verified / common facts
-- Conflicting information
-- Summarized opinions
+## 🛡️ Security Note
+MIACT is designed for local use. Database credentials and environment variables are managed through `.env` files. Ensure your local PostgreSQL instance is secured.

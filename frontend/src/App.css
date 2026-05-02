@@ -24,6 +24,24 @@
   }
 }
 
+@keyframes popupBounceIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.88);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(3px) scale(1.02);
+  }
+  80% {
+    transform: translateY(-1px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes subtleOuterGlow {
   0% {
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
@@ -43,7 +61,11 @@
 }
 
 .animate-float-in {
-  animation: floatIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: floatIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-popup-bounce {
+  animation: popupBounceIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .welcome-glow {
@@ -61,7 +83,82 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-/* Custom Scrollbar - Aggressive Scoping */
+.glass-popup {
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.result-container-stable {
+  min-height: 400px;
+}
+
+/* Joined Pill Toggle */
+.pill-container {
+  display: flex;
+  background: rgba(17, 24, 39, 0.8);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  padding: 5px;
+  border-radius: 9999px;
+  width: fit-content;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+.pill-indicator {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: calc(50% - 5px);
+  background: #ffffff;
+  border-radius: 9999px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+
+.pill-button {
+  position: relative;
+  z-index: 2;
+  padding: 10px 40px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: color 0.4s ease;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pill-button.active {
+  color: #000000;
+  transform: none;
+}
+
+.pill-button.inactive {
+  color: #64748b;
+}
+
+.pill-button.inactive:hover {
+  color: #cbd5e1;
+}
+
+/* Remove Sliding Viewport in favor of natural height toggles */
+.sliding-viewport {
+  width: 100%;
+  overflow: visible;
+}
+.sliding-track {
+  display: block;
+}
+.sliding-panel {
+  width: 100%;
+}
 ::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
@@ -79,6 +176,20 @@
   opacity: 0.55;
   color: #94a3b8;
   margin-left: 4px;
+}
+
+.opinion-card.professional {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%);
+    box-shadow: 0 4px 15px -3px rgba(255, 215, 0, 0.08), 0 4px 6px -2px rgba(255, 215, 0, 0.05);
+    border-right: 2px solid rgba(255, 212, 0, 0.4);
+}
+
+.spec-category-header td {
+    padding-top: 1.5rem !important;
+    padding-bottom: 0.75rem !important;
+    background: linear-gradient(to right, rgba(255,255,255,0.05), transparent) !important;
+    letter-spacing: 0.15em;
+    font-weight: 800;
 }
 
 ::-webkit-scrollbar-track,
@@ -127,4 +238,85 @@
 
 .animate-welcome-out {
   animation: slideDownFadeOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Sliding Viewport System */
+.sliding-viewport {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.sliding-track {
+  display: flex;
+  width: 200%;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.sliding-panel {
+  width: 50%;
+  flex-shrink: 0;
+  padding: 0 10px;
+}
+
+/* Discrete Timeline System */
+.timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 36px;
+  margin-bottom: 24px;
+}
+
+.timeline-bullet {
+  position: absolute;
+  left: 0;
+  top: 8px; /* Centered relative to small text header */
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  z-index: 10;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 5px; /* Half of bullet width to center */
+  top: 20px; /* Start from bottom of bullet */
+  bottom: -24px; /* Extend to start of next bullet */
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 5;
+}
+
+.opinion-row {
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.opinion-heading {
+  min-height: 13.5rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.opinion-scroll-shell {
+  padding-top: 0.5rem;
+  padding-bottom: 1.25rem;
+}
+
+.opinion-card-strip {
+  align-items: stretch;
+  gap: 1.25rem;
+  min-height: 13.5rem;
+}
+
+.opinion-card {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }

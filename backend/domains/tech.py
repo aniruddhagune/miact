@@ -1,28 +1,58 @@
-# Trusted Sources
-TRUSTED_DOMAINS = [
-    # Generic
-    "wikipedia.org",
-    # Phones
+# Trusted Sources — per query type
+TRUSTED_DOMAINS_PHONE = [
     "gsmarena.com",
     "devicespecifications.com",
-    # Laptops
-    
-    # Phone Company Sites
-    "oneplus.in",
+    "wikipedia.org",
+    # Phone manufacturer sites
+    "oneplus.in", "oneplus.com",
     "apple.com",
-    "samsuing.com",
+    "samsung.com",
     "mi.com",
-    "realme.com/in/",
+    "realme.com",
     "vivo.com",
     "oppo.com",
-    "motorola.in"
-
+    "motorola.com",
+    "google.com/phones",
+    "nothing.tech",
 ]
 
-SHOPPING_DOMAINS = [
-    "amazon.in",
-    "flipkart.com"
+TRUSTED_DOMAINS_LAPTOP = [
+    "notebookcheck.net",
+    "rtings.com",
+    "wikipedia.org",
+    "laptopmag.com",
+    "tomsguide.com",
+    "techradar.com",
+    "lenovo.com",
+    "dell.com",
+    "hp.com",
+    "asus.com",
+    "apple.com",
 ]
+
+TRUSTED_DOMAINS_GENERAL = [
+    "wikipedia.org",
+]
+
+# Legacy flat list — kept for backward compatibility
+TRUSTED_DOMAINS = TRUSTED_DOMAINS_PHONE + TRUSTED_DOMAINS_LAPTOP
+
+SHOPPING_DOMAINS = {
+    "IN": ["amazon.in", "flipkart.com", "gadgets360.com"],
+    "USA": ["amazon.com", "bestbuy.com", "walmart.com"],
+    "UK": ["amazon.co.uk", "currys.co.uk", "argos.co.uk"],
+    "GLOBAL": ["amazon.com"]
+}
+
+
+def get_trusted_domains(query_type: str) -> list:
+    """Return the right trusted domain list based on parsed query type."""
+    if query_type == "tech_phone":
+        return TRUSTED_DOMAINS_PHONE
+    if query_type == "tech_laptop":
+        return TRUSTED_DOMAINS_LAPTOP
+    # news is handled in news.py
+    return TRUSTED_DOMAINS_GENERAL
 
 # Aspect Detection
 ASPECT_KEYWORDS = {
@@ -66,8 +96,17 @@ CATEGORY_TERMS = [
 ]
 
 DESCRIPTOR_TERMS = [
-    "max", "pro", "plus", "ultra", "series"
+    "max", "pro", "plus", "ultra", "series", "mini", "se", "lite", "fe", "compact", "standard"
 ]
+
+# URL Categorization Keywords
+URL_TYPE_KEYWORDS = {
+    "specs": ["specs", "specification", "specifications", "features", "full-specifications"],
+    "review": ["review", "hands-on", "rating", "assessment", "analysis"],
+    "comparison": ["vs", "compare", "comparison", "versus", "or"],
+    "news": ["news", "article", "story", "updates", "flash"],
+    "rumored": ["rumor", "rumoured", "leak", "leaked", "upcoming", "concept"]
+}
 
 # Numeric Extraction
 
@@ -172,3 +211,63 @@ TECH_DATE_KEYWORDS = {
     "discontinued_date": ["discontinued", "retired"],
     "update_date": ["update", "updated", "updates until"]
 }
+
+# ---- CATEGORIZATION GROUPS (Phase 3 Alignment) ----
+
+TECH_CATEGORY_MAP = {
+    # Dates
+    "announced": "Dates",
+    "status": "Dates",
+    "released": "Dates",
+    "release_date": "Dates",
+    "announcement_date": "Dates",
+    
+    # Core
+    "os": "Core",
+    "chipset": "Core",
+    "processor": "Core",
+    "cpu": "Core",
+    "gpu": "Core",
+    "graphics": "Core",
+    "platform": "Core",
+    "system on chip": "Core",
+    
+    # Memory
+    "card slot": "Memory",
+    "internal": "Memory",
+    "ram": "Memory",
+    "memory": "Memory",
+    "storage": "Memory",
+    
+    # Connectivity
+    "wlan": "Connectivity",
+    "bluetooth": "Connectivity",
+    "positioning": "Connectivity",
+    "nfc": "Connectivity",
+    "radio": "Connectivity",
+    "usb": "Connectivity",
+    "connectivity": "Connectivity",
+    
+    # Display
+    "type": "Display",
+    "size": "Display",
+    "resolution": "Display",
+    "protection": "Display",
+    "refresh rate": "Display",
+    "screen": "Display",
+    "display": "Display"
+}
+
+def get_aspect_group(aspect: str) -> str:
+    """Return the high-level category for a tech aspect."""
+    return TECH_CATEGORY_MAP.get(aspect.lower(), "Other")
+
+def group_aspects(records: list) -> dict:
+    """Group flat aspect records into a categorized dictionary."""
+    grouped = {}
+    for r in records:
+        group = get_aspect_group(r.get("aspect", ""))
+        if group not in grouped:
+            grouped[group] = []
+        grouped[group].append(r)
+    return grouped

@@ -1,7 +1,9 @@
 import asyncio
 from ddgs import DDGS
-
 import re
+from backend.services.url_filter import URLFilter
+from backend.nlp.relevance_engine import is_english_text
+from backend.utils.logger import logger
 
 def is_valid_match(query: str, title: str):
     entity_lower = query.lower()
@@ -13,49 +15,115 @@ def is_valid_match(query: str, title: str):
             return False
     return True
 
-def _do_ddg_sync(query: str, num_results: int):
+def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tuple[bool, int, str, list[str]]:
+    """
+    Score a search result match for relevance using the new spaCy engine.
+    Returns (is_valid, score, category, trace).
+    """
+    from backend.nlp.relevance_engine import calculate_relevance_score
+    from backend.domains.tech import TRUSTED_DOMAINS_PHONE
+
+    relevance_01, category, trace = calculate_relevance_score(query, title, url, snippet)
+    
+    # Convert 0.0-1.0 score to 0-20 scale for search sorting
+    score = int(relevance_01 * 20)
+    
+    # 1. Filter Threshold
+    if relevance_01 < 0.35:
+        # Check snippet as fallback overlap
+        snippet_keywords = set(re.sub(r'[^a-z0-9 ]', '', snippet.lower()).split())
+        query_keywords = set(re.sub(r'[^a-z0-9 ]', '', query.lower()).split())
+        if not (query_keywords & snippet_keywords):
+            trace.append("Filter Triggered: Score < 0.35 and no snippet overlap.")
+            return False, 0, category, trace
+
+    # 2. Domain Trust Bonus
+    u_norm = url.split("/")[2] if "://" in url else url
+    if any(d in u_norm for d in TRUSTED_DOMAINS_PHONE):
+        score += 5
+        trace.append("Bonus +5: Trusted Tech Domain.")
+        
+    return True, score, category, trace
+
+def _do_ddg_sync(query: str, num_results: int, region: str = "in-en"):
+    logger.debug("SEARCH", f"Executing DDG sync for: '{query}' in region: {region}")
     results = []
     try:
+        # Use DDGS with dynamic regional settings
         with DDGS() as ddgs:
-            raw_results = list(ddgs.text(query, max_results=num_results))
-            print(f"[DEBUG] Raw search results for '{query}': {len(raw_results)}")
+            raw_results = list(ddgs.text(query, region=region, max_results=num_results))
+            logger.debug("SEARCH", f"Raw search results received: {len(raw_results)}")
+            
+            seen_urls = set()
             for r in raw_results:
                 title = r.get("title", "")
-                if is_valid_match(query, title):
+                raw_url = r.get("href", "")
+                snippet = r.get("body", "")
+
+                # 1. Normalize
+                url = URLFilter.normalize_url(raw_url)
+
+                # 2. Deduplicate
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
+
+                # 3. Static Filter (Blacklist)
+                if not URLFilter.is_worth_scraping(url):
+                    logger.debug("SEARCH", f"URLFilter: Skipping blacklisted/irrelevant URL: {url}")
+                    continue
+
+                # 4. Language Guard: Force English Wikipedia
+                if "wikipedia.org" in url and not url.startswith("https://en.wikipedia.org"):
+                    continue
+                
+                # 5. Language Guard: Snippet check
+                if not is_english_text(snippet):
+                    logger.debug("SEARCH", f"LanguageGuard: Skipping non-English snippet for {url}")
+                    continue
+
+                # 6. Expensive NLP Relevance Match
+                is_valid, score, category, trace = score_match(query, title, url, snippet)
+                if is_valid:
                     results.append({
                         "title": title,
-                        "url": r.get("href"),
-                        "snippet": r.get("body"),
-                        "source": r.get("href").split("/")[2] if "://" in r.get("href") else ""
+                        "url": url,
+                        "snippet": snippet,
+                        "source": url.split("/")[2] if "://" in url else "",
+                        "score": score,
+                        "category": category,
+                        "trace": trace
                     })
                 else:
-                    print(f"[DEBUG] Filtered out title: {title}")
-    except:
-        pass
+                    logger.debug("SEARCH", f"Filtered out irrelevant result: {title}", data={"url": url, "trace": trace})
+    except Exception as e:
+        logger.error("SEARCH", f"DuckDuckGo search error: {e}")
     return results
 
-async def execute_ddg(query: str, num_results: int):
-    return await asyncio.to_thread(_do_ddg_sync, query, num_results)
+async def execute_ddg(query: str, num_results: int, region: str = "in-en"):
+    return await asyncio.to_thread(_do_ddg_sync, query, num_results, region)
 
-async def fetch_search_results_async(query: str, num_results: int = 10, trusted_domains: list = None):
+async def fetch_search_results_async(query: str, num_results: int = 10, trusted_domains: list = None, region: str = "in-en"):
+    logger.info("SEARCH", f"Fetching results for: '{query}'", data={"num_results": num_results, "trusted": trusted_domains, "region": region})
     results = []
     if trusted_domains:
         site_query = " OR ".join([f"site:{d}" for d in trusted_domains])
         full_query = f"{query} {site_query}".strip()
         
         # Execute Trusted Domain search
-        trusted_results = await execute_ddg(full_query, num_results)
+        trusted_results = await execute_ddg(full_query, num_results, region)
         for p in trusted_results:
             results.append(p)
             
         # Fallback query if insufficient
-        if len(trusted_results) < 2:
-            # We execute fallback without site constraints
-            fallback_results = await execute_ddg(query, num_results - len(trusted_results))
+        if len(results) < 2:
+            logger.debug("SEARCH", "Insufficient results from trusted domains. Running broad fallback.")
+            fallback_results = await execute_ddg(query, num_results - len(results), region)
             for f in fallback_results:
                 if not any(x["url"] == f["url"] for x in results):
                     results.append(f)
     else:
-        results = await execute_ddg(query, num_results)
+        results = await execute_ddg(query, num_results, region)
 
+    logger.info("SEARCH", f"Total relevant results found: {len(results)}")
     return results

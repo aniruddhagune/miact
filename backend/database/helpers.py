@@ -1,4 +1,4 @@
-from backend.database.connection import get_connection
+from backend.database.connection import get_connection, execute_query
 from urllib.parse import urlparse
 
 
@@ -6,7 +6,7 @@ def get_or_create_entity(name: str):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
+    execute_query(cur, 
         "SELECT entity_id FROM entities WHERE name = %s",
         (name,)
     )
@@ -15,7 +15,7 @@ def get_or_create_entity(name: str):
     if row:
         return row[0]
 
-    cur.execute(
+    execute_query(cur, 
         "INSERT INTO entities (name, entity_type) VALUES (%s, %s) RETURNING entity_id",
         (name, "product")
     )
@@ -34,7 +34,7 @@ def get_or_create_source(url: str):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
+    execute_query(cur, 
         "SELECT source_id FROM sources WHERE base_url = %s",
         (domain,)
     )
@@ -43,7 +43,7 @@ def get_or_create_source(url: str):
     if row:
         return row[0]
 
-    cur.execute(
+    execute_query(cur, 
         "INSERT INTO sources (name, base_url) VALUES (%s, %s) RETURNING source_id",
         (domain, domain)
     )
@@ -60,7 +60,7 @@ def create_document_if_not_exists(url: str, source_id: int):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
+    execute_query(cur, 
         "SELECT document_id FROM documents WHERE document_id = %s",
         (url,)
     )
@@ -70,7 +70,7 @@ def create_document_if_not_exists(url: str, source_id: int):
         conn.close()
         return
 
-    cur.execute(
+    execute_query(cur, 
         "INSERT INTO documents (document_id, source_id) VALUES (%s, %s)",
         (url, source_id)
     )

@@ -1,4 +1,4 @@
-from backend.database.connection import get_connection
+from backend.database.connection import get_connection, execute_query
 
 
 def insert_attribute(
@@ -13,7 +13,7 @@ def insert_attribute(
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    execute_query(cur, """
         INSERT INTO facts (
             entity_id,
             document_id,
@@ -24,7 +24,6 @@ def insert_attribute(
             confidence_score
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT DO NOTHING
     """, (
         entity_id,
         document_id,

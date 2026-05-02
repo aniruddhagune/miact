@@ -1,12 +1,13 @@
-from backend.database.connection import get_connection
-
+from backend.database.connection import get_connection, execute_query
+from backend.utils.logger import logger
 
 def fetch_from_db(parsed):
+    logger.debug("DATABASE", "Fetching results from database cache", data={"entities": parsed.get("entities")})
     conn = get_connection()
     cursor = conn.cursor()
 
     query = """
-        SELECT f.aspect, f.value, f.unit, e.name
+        SELECT f.aspect, f.value, f.unit, e.name, f.document_id, f.attr_type, f.confidence_score
         FROM facts f
         LEFT JOIN entities e ON f.entity_id = e.entity_id
         WHERE 1=1
@@ -33,14 +34,21 @@ def fetch_from_db(parsed):
 
     # entity filter
     if parsed.get("entities"):
-        query += " AND e.name ILIKE %s"
-        params.append(f"%{parsed['entities'][0]}%")
+        # If multiple entities, we fetch all of them
+        placeholders = ", ".join(["%s"] * len(parsed["entities"]))
+        query += f" AND e.name IN ({placeholders})"
+        params.extend(parsed["entities"])
 
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
+    try:
+        execute_query(cursor, query, params)
+        rows = cursor.fetchall()
+        logger.info("DATABASE", f"Cache lookup complete. Found {len(rows)} records.")
+    except Exception as e:
+        logger.error("DATABASE", f"Database query failed: {e}")
+        rows = []
+    finally:
+        cursor.close()
+        conn.close()
 
     results = []
 
@@ -49,11 +57,13 @@ def fetch_from_db(parsed):
             "aspect": row[0],
             "value": row[1],
             "unit": row[2],
-            "entity": row[3]
+            "entity": row[3],
+            "source": row[4],
+            "type": row[5],
+            "score": row[6]
         })
 
     found_aspects = set()
-
     for r in results:
         found_aspects.add(r["aspect"])
 
