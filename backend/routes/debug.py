@@ -12,7 +12,7 @@ class DebugSettings(BaseModel):
     log_all: bool
 
 
-@router.post("/api/debug/settings")
+@router.post("/debug/settings")
 def update_debug_settings(settings: DebugSettings):
     """Update debug configurations at runtime."""
     _vars.DEBUG = settings.debug
@@ -23,7 +23,7 @@ def update_debug_settings(settings: DebugSettings):
     return get_current_settings()
 
 
-@router.get("/api/debug/settings")
+@router.get("/debug/settings")
 def get_current_settings():
     return {
         "debug": _vars.DEBUG,
@@ -37,11 +37,11 @@ def get_current_settings():
     }
 
 # Legacy endpoint for backward compatibility
-@router.get("/api/debug")
+@router.get("/debug")
 def get_debug_mode():
     return {"debug": _vars.DEBUG}
 
-@router.post("/api/debug")
+@router.post("/debug")
 def set_debug_mode(payload: dict):
     _vars.DEBUG = payload.get("debug", _vars.DEBUG)
     return {"debug": _vars.DEBUG}

@@ -45,13 +45,13 @@ def score_match(query: str, title: str, url: str = "", snippet: str = "") -> tup
         
     return True, score, category, trace
 
-def _do_ddg_sync(query: str, num_results: int, region: str = "in-en"):
-    logger.debug("SEARCH", f"Executing DDG sync for: '{query}' in region: {region}")
+def _do_ddg_sync(query: str, num_results: int, region: str = "in-en", timelimit: str = None):
+    logger.debug("SEARCH", f"Executing DDG sync for: '{query}' in region: {region}, timelimit: {timelimit}")
     results = []
     try:
         # Use DDGS with dynamic regional settings
         with DDGS() as ddgs:
-            raw_results = list(ddgs.text(query, region=region, max_results=num_results))
+            raw_results = list(ddgs.text(query, region=region, max_results=num_results, timelimit=timelimit))
             logger.debug("SEARCH", f"Raw search results received: {len(raw_results)}")
             
             seen_urls = set()
@@ -100,30 +100,30 @@ def _do_ddg_sync(query: str, num_results: int, region: str = "in-en"):
         logger.error("SEARCH", f"DuckDuckGo search error: {e}")
     return results
 
-async def execute_ddg(query: str, num_results: int, region: str = "in-en"):
-    return await asyncio.to_thread(_do_ddg_sync, query, num_results, region)
+async def execute_ddg(query: str, num_results: int, region: str = "in-en", timelimit: str = None):
+    return await asyncio.to_thread(_do_ddg_sync, query, num_results, region, timelimit)
 
-async def fetch_search_results_async(query: str, num_results: int = 10, trusted_domains: list = None, region: str = "in-en"):
-    logger.info("SEARCH", f"Fetching results for: '{query}'", data={"num_results": num_results, "trusted": trusted_domains, "region": region})
+async def fetch_search_results_async(query: str, num_results: int = 10, trusted_domains: list = None, region: str = "in-en", timelimit: str = None):
+    logger.info("SEARCH", f"Fetching results for: '{query}'", data={"num_results": num_results, "trusted": trusted_domains, "region": region, "timelimit": timelimit})
     results = []
     if trusted_domains:
         site_query = " OR ".join([f"site:{d}" for d in trusted_domains])
         full_query = f"{query} {site_query}".strip()
         
         # Execute Trusted Domain search
-        trusted_results = await execute_ddg(full_query, num_results, region)
+        trusted_results = await execute_ddg(full_query, num_results, region, timelimit)
         for p in trusted_results:
             results.append(p)
             
         # Fallback query if insufficient
         if len(results) < 2:
             logger.debug("SEARCH", "Insufficient results from trusted domains. Running broad fallback.")
-            fallback_results = await execute_ddg(query, num_results - len(results), region)
+            fallback_results = await execute_ddg(query, num_results - len(results), region, timelimit)
             for f in fallback_results:
                 if not any(x["url"] == f["url"] for x in results):
                     results.append(f)
     else:
-        results = await execute_ddg(query, num_results, region)
+        results = await execute_ddg(query, num_results, region, timelimit)
 
     logger.info("SEARCH", f"Total relevant results found: {len(results)}")
     return results

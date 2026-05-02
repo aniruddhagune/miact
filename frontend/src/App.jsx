@@ -141,7 +141,7 @@ function App() {
    const handleClearCache = async () => {
      if (!window.confirm("Are you sure you want to clear the entire local database cache? This cannot be undone.")) return;
      try {
-       const response = await fetch("http://127.0.0.1:8000/clear-db", { method: "POST" });
+       const response = await fetch("http://127.0.0.1:8000/api/clear-db", { method: "POST" });
        const data = await response.json();
        if (data.status === "success") {
          alert("Cache cleared successfully!");
@@ -351,7 +351,7 @@ function App() {
       setActiveChat(newQueryIndex);
       setShowSourcesPopup(false);
 
-      const es = new EventSource(`http://127.0.0.1:8000/search?query=${encodeURIComponent(queryText)}&t=${Date.now()}`);
+      const es = new EventSource(`http://127.0.0.1:8000/api/search?query=${encodeURIComponent(queryText)}&t=${Date.now()}`);
 
       es.onmessage = (event) => {
          try {

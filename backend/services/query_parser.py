@@ -189,6 +189,10 @@ def parse_query(query: str):
         layout = "comparison_table"
     elif mode == "product":
         layout = "single_spec_view"
+    elif mode == "general" and len(entities) > 0:
+        # For public figures or specific entities in general mode, 
+        # use a layout that supports both facts and news.
+        layout = "hybrid_view"
     else:
         layout = "general_list"
 

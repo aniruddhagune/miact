@@ -51,7 +51,7 @@ async def execute_search(query: str, t: str = None):
                 
                 if ent not in target: target[ent] = []
                 # Avoid duplicates in the same list
-                if not any(x.get("aspect") == item["aspect"] and x.get("value") == item["value"] for x in target[ent]):
+                if not any(x.get("aspect") == item.get("aspect") and x.get("value") == item.get("value") for x in target[ent]):
                     target[ent].append(item)
                 
                 if ent not in urls_dict:
@@ -61,18 +61,20 @@ async def execute_search(query: str, t: str = None):
 
         # ---- CANONICAL ENTITY RESOLUTION ----
         yield f"data: {json.dumps({'step': 'processing', 'message': 'Resolving Entities...'})}\n\n"
-        if parsed.get("entities"):
+        if parsed.get("entities") and parsed.get("mode") == "product":
             canonical_entities = await resolve_canonical_entities(parsed["entities"])
             parsed["entities"] = canonical_entities
 
         entities = parsed.get("entities", [])
         query_type = parsed.get("query_type", "general")
+        attribute = parsed.get("attribute")
         search_region = "in-en"
 
         # ---- NEWS MODE ----
         if parsed["mode"] == "news":
             news_domains = get_news_domains(query_type)
-            news_results = await fetch_search_results_async(query, num_results=6, trusted_domains=news_domains, region=search_region)
+            # Use timelimit='w' for fresh news (past week)
+            news_results = await fetch_search_results_async(query, num_results=6, trusted_domains=news_domains, region=search_region, timelimit="w")
             
             primary_entity = entities[0] if entities else "News"
             summary_list = []
@@ -87,7 +89,7 @@ async def execute_search(query: str, t: str = None):
                     if p_res:
                         add_to_segregated(p_res, url, primary_entity)
                         for item in p_res:
-                            if "Summary:" in item.get("aspect", ""):
+                            if "Summary:" in item.get("aspect", "") and "value" in item:
                                 summary_list.append(item["value"])
                         yield stream_update()
                 except Exception as e:
@@ -113,10 +115,18 @@ async def execute_search(query: str, t: str = None):
         # ---- PRODUCT / GENERAL MODE ----
         else:
             # Step 1: Trusted Facts (Fast)
+            # Default factual domains
             fact_domains = ["wikipedia.org"]
-            if query_type.startswith("tech_phone"): fact_domains = ["gsmarena.com"] + fact_domains
+            if query_type.startswith("tech_phone"): 
+                fact_domains = ["gsmarena.com"] + fact_domains
+            elif query_type.startswith("tech_laptop"):
+                fact_domains = ["notebookcheck.net"] + fact_domains
             
+            # For general entities (like people), we want both Facts (Wiki) and Latest News
             for ent in (entities[:1] if entities else ["Global"]):
+                yield f"data: {json.dumps({'step': 'processing', 'message': f'Retrieving facts for {ent}...'})}\n\n"
+                
+                # FACTUAL PHASE
                 for domain in fact_domains:
                     s_res = await fetch_search_results_async(f"{ent} site:{domain}", num_results=1)
                     if s_res:
@@ -125,6 +135,23 @@ async def execute_search(query: str, t: str = None):
                         p_res = await process_query_url(parsed, url)
                         add_to_segregated(p_res, url, ent)
                         yield stream_update()
+
+                # NEWS PHASE (If not a specific tech spec query)
+                if not attribute and query_type == "general":
+                    yield f"data: {json.dumps({'step': 'processing', 'message': f'Checking latest updates for {ent}...'})}\n\n"
+                    # Search for recent news (past month)
+                    news_results = await fetch_search_results_async(f"{ent} news", num_results=3, timelimit="m")
+                    for r in news_results:
+                        url = r["url"]
+                        yield f"data: {json.dumps({'step': 'partial', 'entity': ent, 'url': url})}\n\n"
+                        try:
+                            # Process as news to get summaries
+                            p_res = await process_news_url(parsed, url, fallback_text=r.get("snippet"))
+                            if p_res:
+                                add_to_segregated(p_res, url, ent)
+                                yield stream_update()
+                        except Exception as e:
+                            logger.error("ORCHESTRATOR", f"Error in hybrid news for {ent}: {e}")
 
             # Step 2: Research & Opinions (Deep)
             yield f"data: {json.dumps({'step': 'processing', 'message': 'Deep Researching...'})}\n\n"
